@@ -99,39 +99,15 @@ class JsonDiffTests(unittest.TestCase):
     @settings(max_examples=1000)
     def test_dump(self, scenario):
         a, b = scenario
-        diff(a, b, syntax='compact', dump=True)
-        diff(a, b, syntax='explicit', dump=True)
-        diff(a, b, syntax='symmetric', dump=True)
+        diff(a, b, dump=True)
 
     @given(strategies.randoms().map(generate_scenario))
     @settings(max_examples=1000)
     def test_compact_syntax(self, scenario):
         a, b = scenario
-        differ = JsonDiffer(syntax='compact')
+        differ = JsonDiffer()
         d = differ.diff(a, b)
         self.assertEqual(b, differ.patch(a, d))
-        dm = differ.marshal(d)
-        self.assertEqual(d, differ.unmarshal(dm))
-
-
-    @given(strategies.randoms().map(generate_scenario))
-    @settings(max_examples=1000)
-    def test_explicit_syntax(self, scenario):
-        a, b = scenario
-        differ = JsonDiffer(syntax='explicit')
-        d = differ.diff(a, b)
-        # self.assertEqual(b, differ.patch(a, d))
-        dm = differ.marshal(d)
-        self.assertEqual(d, differ.unmarshal(dm))
-
-    @given(strategies.randoms().map(generate_scenario))
-    @settings(max_examples=1000)
-    def test_symmetric_syntax(self, scenario):
-        a, b = scenario
-        differ = JsonDiffer(syntax='symmetric')
-        d = differ.diff(a, b)
-        self.assertEqual(b, differ.patch(a, d))
-        self.assertEqual(a, differ.unpatch(b, d))
         dm = differ.marshal(d)
         self.assertEqual(d, differ.unmarshal(dm))
 
@@ -151,66 +127,21 @@ class JsonDiffTests(unittest.TestCase):
 
 
 @pytest.mark.parametrize(
-    ("a", "b", "syntax", "expected"),
+    ("a", "b", "expected"),
     [
-        pytest.param([], [{"a": True}], "explicit", {insert: [(0, {"a": True})]},
+        pytest.param([], [{"a": True}], [{"a": True}],
                      id="issue59_"),
-        pytest.param([{"a": True}], [], "explicit", {delete: [0]},
+        pytest.param([{"a": True}], [], [],
                      id="issue59_"),
-        pytest.param([], [{"a": True}], "compact", [{"a": True}],
-                     id="issue59_"),
-        pytest.param([{"a": True}], [], "compact", [],
-                     id="issue59_"),
-        pytest.param([], [{"a": True}], "symmetric", {insert: [(0, {"a": True})]},
-                     id="issue59_"),
-        pytest.param([{"a": True}], [], "symmetric", {delete: [(0, {"a": True})]},
-                     id="issue59_"),
-        pytest.param({1: 2}, {5: 3}, "symmetric", {delete: {1: 2}, insert: {5: 3}},
-                     id="issue36_"),
-        pytest.param({1: 2}, {5: 3}, "compact", {replace: {5: 3}},
+        pytest.param({1: 2}, {5: 3}, {replace: {5: 3}},
                      id="issue36_"),
     ],
 )
 class TestSpecificIssue:
-    def test_issue(self,  a, b, syntax, expected):
-        actual = diff(a, b, syntax=syntax)
+    def test_issue(self, a, b, expected):
+        actual = diff(a, b)
         assert actual == expected
 
-
-class TestRightOnly(unittest.TestCase):
-    def test_right_only_syntax(self):
-        a = {"poplist": [1, 2, 3]}
-        b = {}
-        self.assertEqual(
-            diff(a, b, syntax="rightonly", marshal=True),
-            {
-                "$delete": ["poplist"],
-            }
-        )
-        a = {1: 2, 2: 3, 'list': [1, 2, 3], 'samelist': [1, 2, 3], "poplist": [1, 2, 3]}
-        b = {1: 2, 2: 4, 'list': [1, 3], 'samelist': [1, 2, 3]}
-        self.assertEqual(
-            diff(a, b, syntax="rightonly", marshal=True),
-            {
-                2: 4,
-                "list": [1, 3],
-                "$delete": ["poplist"],
-            }
-        )
-        self.assertEqual(
-            diff(a, b, syntax="rightonly"),
-            {
-                2: 4,
-                "list": [1, 3],
-                delete: ["poplist"],
-            }
-        )
-        c = [1, 2, 3]
-        d = [4, 5, 6]
-        self.assertEqual(
-            diff(c, d, syntax="rightonly", marshal=True),
-            [4, 5, 6],
-        )
 
 class TestLoaders(unittest.TestCase):
 

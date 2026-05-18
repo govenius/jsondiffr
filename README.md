@@ -33,16 +33,6 @@ Diff JSON and JSON-like structures in Python.
 >>> diff({'a': [0, {'b': 4}, 1]}, {'a': [0, {'c': 5}, 1]})
 {'a': {insert: [(1, {'c': 5})], delete: [1]}}
 
-# Support for various diff syntaxes
->>> diff({'a': 1, 'b': 2}, {'b': 3, 'c': 4}, syntax='explicit')
-{insert: {'c': 4}, update: {'b': 3}, delete: ['a']}
-
->>> diff({'a': 1, 'b': 2}, {'b': 3, 'c': 4}, syntax='symmetric')
-{insert: {'c': 4}, 'b': [2, 3], delete: {'a': 1}}
-
->>> diff({'list': [1, 2, 3], "poplist": [1, 2, 3]}, {'list': [1, 3]}, syntax="rightonly")
-{"list": [1, 3], delete: ["poplist"]}
-
 # Special handling of sets
 >>> diff({'a', 'b', 'c'}, {'a', 'c', 'd'})
 {discard: set(['b']), add: set(['d'])}
@@ -68,7 +58,7 @@ Diff JSON and JSON-like structures in Python.
 
 Usage:
 ```
-jdiff [-h] [-p] [-s {compact,symmetric,explicit}] [-i INDENT] [-f {json,yaml}] first second
+jdiff [-h] [-p] [-i INDENT] [-f {json,yaml}] first second
 
 positional arguments:
   first
@@ -77,8 +67,6 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -p, --patch
-  -s {compact,symmetric,explicit}, --syntax {compact,symmetric,explicit}
-                        Diff syntax controls how differences are rendered (default: compact)
   -i INDENT, --indent INDENT
                         Number of spaces to indent. None is compact, no indentation. (default: None)
   -f {json,yaml}, --format {json,yaml}
@@ -90,9 +78,7 @@ Examples:
 ```bash
 $ jdiff a.json b.json -i 2
 
-$ jdiff a.json b.json -i 2 -s symmetric
-
-$ jdiff a.yaml b.yaml -f yaml -s symmetric
+$ jdiff a.yaml b.yaml -f yaml
 ```
 
 ## Development

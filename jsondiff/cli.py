@@ -19,8 +19,6 @@ def main():
     parser.add_argument("first")
     parser.add_argument("second")
     parser.add_argument("-p", "--patch", action="store_true", default=False)
-    parser.add_argument("-s", "--syntax", choices=(jsondiff.builtin_syntaxes.keys()), default="compact",
-                        help="Diff syntax controls how differences are rendered")
     parser.add_argument("-i", "--indent", action="store", type=int, default=None,
                         help="Number of spaces to indent. None is compact, no indentation.")
     parser.add_argument("-f", "--format", choices=("json", "yaml"), default="json",
@@ -41,14 +39,12 @@ def main():
             parsed_first,
             parsed_second,
             marshal=True,
-            syntax=args.syntax
         )
     else:
         x = jsondiff.diff(
             parsed_first,
             parsed_second,
             marshal=True,
-            syntax=args.syntax
         )
 
     serializer.serialize_data(x, sys.stdout)

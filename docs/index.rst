@@ -4,7 +4,6 @@ jsondiff
 jsondiff is an MIT-licensed Python library which lets you compare, diff and patch JSON and JSON-like structures in
 Python. It has special support for
 
-* multiple and custom-defined diff syntaxes
 * Python sets
 * similarity-based list comparison
 

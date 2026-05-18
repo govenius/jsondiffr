@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.0.0 (unreleased)
+
+Breaking: drop `explicit`, `symmetric`, and `rightonly` diff syntaxes; only
+the `compact` syntax remains.
+
+* `JsonDiffer` no longer accepts a `syntax=` keyword argument; calls like
+  `diff(a, b, syntax='symmetric')` will fail.
+* `JsonDiffer.unpatch` and the `unpatch` capability are removed (only the
+  symmetric syntax implemented reversal).
+* Module attributes `JsonDiffSyntax`, `CompactJsonDiffSyntax`,
+  `ExplicitJsonDiffSyntax`, `SymmetricJsonDiffSyntax`,
+  `RightOnlyJsonDiffSyntax`, and `builtin_syntaxes` have been removed; the
+  compact emit/patch logic is now inlined in `JsonDiffer`.
+* CLI: the `-s/--syntax` flag is removed.
+
 ## 2.2.1 (Aug, 28th 2024)
 
 Protect Symbol.__eq__ by instance check
