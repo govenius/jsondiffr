@@ -1,145 +1,172 @@
 # Diff Format
 
-This document specifies the diff format produced by `jsondiff.diff(a, b)` and consumed by `jsondiff.patch(a, d)`. The format is designed to be small (it omits unchanged data) and to round-trip back to the modified structure via `patch`.
+This document specifies the in-memory and marshalled diff format used by `jsondiff`. The same format is consumed by `jsondiff.patch(a, d)` and produced by `jsondiff.diff(a, b)`. The format is designed to be small (it omits unchanged data) and to round-trip back to the modified structure when applied to its source.
 
-For any source `a` and target `b`, `patch(a, diff(a, b)) == b`.
+## 1. Marshalled format
 
-## 1. Representation
+### Example
 
-A diff is itself a JSON-like value: a `dict`, `list`, `set`, scalar, or `None`. The *shape* of the diff is determined by the **source** value at that position, not by the target.
+Given a source
 
-### Sentinels
+```json
+{"name": "Alice", "skills": ["Python", "Django"], "obsolete": true}
+```
 
-Six special keys mark structural operations. In memory they are instances of `jsondiff.Symbol`; in the marshaled (string-encoded) form they appear as `$<label>`. The escape prefix `$` is configurable via `escape_str=`.
+and a target
 
-| In-memory       | Marshaled    | Used in          | Meaning                               |
-| --------------- | ------------ | ---------------- | ------------------------------------- |
-| `replace`       | `$replace`   | any container    | Wholesale replacement of the value    |
-| `delete`        | `$delete`    | dict / list      | Remove keys (dict) or positions (list)|
-| `insert`        | `$insert`    | list             | Insert `(position, value)` pairs      |
-| `add`           | `$add`       | set              | Add elements                          |
-| `discard`       | `$discard`   | set              | Remove elements                       |
+```json
+{"name": "Alice", "skills": ["Python", "Django", "Flask"]}
+```
 
-One additional Symbol, `missing`, is exported but used only as an internal sentinel inside the differ and patcher — it never appears in a diff.
+the marshalled diff, written to a JSON file, looks like:
+
+```json
+{
+  "skills": {
+    "$insert": [[2, "Flask"]]
+  },
+  "$delete": ["obsolete"]
+}
+```
+
+`$insert` and `$delete` are **sentinels** — special keys that signal structural operations rather than ordinary data. The rest of this section defines them precisely and explains the in-memory ↔ marshalled translation.
+
+### Structure
+
+A diff value `d` is a JSON-like structure: a `dict`, `list`, `set`, scalar, or `None`. Structural operations are signalled by five **sentinels**. In memory each sentinel is an instance of `jsondiff.Symbol`; in the marshalled (string-encoded) form each appears as `$<label>`. The escape prefix `$` is configurable via `escape_str=`.
+
+| In-memory  | Marshalled  | Used in       | Meaning                                |
+| ---------- | ----------- | ------------- | -------------------------------------- |
+| `replace`  | `$replace`  | any container | Wholesale replacement of the value     |
+| `delete`   | `$delete`   | dict / list   | Remove keys (dict) or positions (list) |
+| `insert`   | `$insert`   | list          | Insert `(position, value)` pairs       |
+| `add`      | `$add`      | set           | Add elements                           |
+| `discard`  | `$discard`  | set           | Remove elements                        |
+
+One additional Symbol, `missing`, is exported but used only as an internal sentinel — it never appears in a diff.
 
 ### The empty diff
 
-An empty dict `{}` at any level means **no change**. `patch(a, {}) == a`.
+An empty dict `{}` at any level means **no change**.
 
-## 2. Diff shapes by source type
+### Marshaling and unmarshaling
 
-The shape of a diff `d` depends on `type(a)`, where `a` is the value being patched. There are five cases.
+`JsonDiffer.marshal(d)` converts an in-memory diff to a JSON-compatible form (modulo sets) by escaping Symbols and `$`-prefixed strings:
 
-### 2.1 Both sides are dicts
+| Input                                     | Marshalled output |
+| ----------------------------------------- | ----------------- |
+| `Symbol('foo')` (any sentinel)            | `"$foo"`          |
+| A string `"$x"` already starting with `$` | `"$$x"`           |
+| Any other string                          | unchanged         |
+| `dict`, `list`, `tuple`                   | recursed into     |
 
-```
-d = {
-    <added-or-changed-key>: <sub-diff or new value>,
-    ...,
-    delete: [<removed-key>, ...]   # optional
-}
-```
+`JsonDiffer.unmarshal(d)` is the inverse: `"$foo"` decodes back to a Symbol if `foo` is a known label, otherwise it strips a single leading `$`. With a different `escape_str=`, the prefix changes accordingly. `marshal` and `unmarshal` are inverses on any diff value.
 
-- A key that is **added** (in `b` but not in `a`) maps directly to its new value.
-- A key that is **changed** (in both, but different) maps to a recursive sub-diff computed against the original sub-value.
-- A key that is **removed** (in `a` but not in `b`) is listed under the `delete` sentinel.
-- An **unchanged** key is omitted entirely.
+### JSON serialization
 
-If a key appears at the top level of the diff and you cannot tell whether it represents an insertion or a sub-patch, the patcher decides by checking whether that key exists in `a`: missing → use the diff value as the new value; present → recurse.
+Sets used in `add` and `discard` values are not directly JSON-serializable; consumers must convert them to lists or supply a custom encoder. The rest of the marshalled form maps onto JSON natively.
 
-### 2.2 Both sides are lists or tuples
+## 2. patch() behavior
 
-```
-d = {
-    <int-position>: <sub-diff>,    # 0 or more changed elements
-    ...,
-    delete: [<source-position>, ...],          # optional, descending order
-    insert: [(<target-position>, <value>), ...]  # optional
-}
-```
+`jsondiff.patch(a, d)` produces a value `b` from a source `a` and a diff `d`. The result is fully determined by the structure of `d` and the type of `a`. Sub-patches are applied recursively.
 
-- `delete` lists positions in the **source list**, in **descending order**. The patcher pops them sequentially, so the order matters.
-- `insert` is a sequence of `(position, value)` pairs applied to the post-delete list in the order given. Positions refer to the resulting list at the moment of insertion.
-- Numeric keys are positions in the **final list** (after deletes and inserts) that point at elements needing a recursive sub-patch.
+### Dispatch rules
 
-Tuples are preserved: if the source is a tuple, the patched value is also a tuple.
+1. If `d` is **not a dict**, return `d` (replacement: `d` is the new value).
+2. If `d` is the **empty dict** `{}`, return `a` unchanged.
+3. If `d` is a dict and contains the `replace` sentinel, return `d[replace]`.
+4. Otherwise the action depends on `type(a)`:
 
-### 2.3 Both sides are sets
+#### When `a` is a `dict`
 
-```
-d = {
-    add: {<element>, ...},      # optional
-    discard: {<element>, ...},  # optional
-}
-```
+Copy `a`. For each `(k, v)` in `d`:
+- if `k is delete`: for each key in `v`, remove it from `a`;
+- else if `k` is **absent** from `a`: set `a[k] = v` verbatim (insertion);
+- else: recurse — `a[k] = patch(a[k], v)`.
 
-`add` and `discard` are themselves sets. They are not JSON-serializable as-is; the consumer must convert them to lists (or use a custom encoder) before serializing.
+#### When `a` is a `list` or `tuple`
 
-### 2.4 Both sides are scalars (or `None`, or unequal types)
+Copy `a` into a list, then:
+- if `delete in d`: pop each position in `d[delete]` from the list in the order given. Positions refer to indices in the **source list** and are expected to be in **descending order**, so sequential `pop()` does not shift later targets.
+- if `insert in d`: for each `(pos, value)` in `d[insert]`, insert `value` at `pos`. Positions refer to the list at the moment of insertion.
+- for every other key in `d` (which must be an integer): treat the key as a position in the **final list** (after deletes and inserts) and recursively patch — `a[int(k)] = patch(a[int(k)], v)`.
+- if the original was a tuple, convert the result back to a tuple before returning.
 
-```
-d = <b>                  # if b is not a dict
-d = {replace: <b>}       # if b is a dict
-```
+#### When `a` is a `set`
 
-The diff *is* the new value `b`. This case is also used when `a` and `b` have different types (e.g., `dict` vs `list`).
+Copy `a`. Then:
+- if `discard in d`: remove every element in `d[discard]` from the set;
+- if `add in d`: add every element in `d[add]` to the set.
 
-### 2.5 The "low similarity" fallback (containers)
+#### When `a` is a scalar
 
-If a recursive container diff would have to delete and re-insert nearly every element, the differ falls back to wholesale replacement using the same rule as 2.4: the diff is `b` itself (if `b` is not a dict) or `{replace: b}` (if `b` is a dict).
+If none of the above branches match, return `d` (the diff is the new value).
 
-In particular:
+### Empty diffs and replacement
+
+The empty dict `{}` always means **no change**, regardless of `a`'s type. A non-dict `d` is always treated as a wholesale replacement: `patch(a, [1, 2, 3]) == [1, 2, 3]`.
+
+### No reverse operation
+
+The format only supports forward application. There is no `unpatch(b, d) → a`; the diff retains only the information needed to go forward.
+
+## 3. diff() behavior
+
+`jsondiff.diff(a, b)` produces a diff `d` that `patch()` can apply to `a` to obtain `b`. The shape of `d` is determined by the types of `a` and `b`.
+
+### Top-level dispatch
+
+| Case                                            | Result                                                       |
+| ----------------------------------------------- | ------------------------------------------------------------ |
+| `a is b` (identity) or `a == b` (equal scalars) | `{}`                                                         |
+| Type mismatch (e.g., `dict` vs `list`)          | `b` directly if `b` is not a dict; `{replace: b}` if it is   |
+| Scalar inequality (same scalar type, unequal)   | `b` directly                                                 |
+| Both `dict`                                     | See *Dict diff*                                              |
+| Both `list` or both `tuple`                     | See *List diff*                                              |
+| Both `set`                                      | See *Set diff*                                               |
+
+### Dict diff
+
+The differ partitions `b`'s keys into **added** (not in `a`), **changed** (in both, with recursive sub-diff and a similarity score), and **removed** (in `a`, not in `b`). A similarity score `s ∈ [0, 1]` aggregates per-key similarities. Then:
+
+- if `s == 0` (nothing in common), emit `{replace: b}`;
+- if `s == 1` and nothing was added, changed, or removed, emit `{}`;
+- otherwise emit a dict containing the changed-or-added keys mapped to their sub-diffs (for changed) or new values (for added), plus `delete: [<removed-key>, ...]` if anything was removed.
+
+Sub-diffs that resolve to `{}` (unchanged) are omitted entirely.
+
+### List diff
+
+The differ runs an LCS-based comparison between source and target. Each step is classified as `inserted`, `deleted`, or `changed` (matched but not identical). A similarity score `s ∈ [0, 1]` aggregates per-element similarities. Then:
+
+- if `s == 0`, emit `b` directly (the full target list);
+- if `s == 1` and nothing was inserted, changed, or deleted, emit `{}`;
+- otherwise emit a dict:
+  - integer keys for each changed element, mapping the **target position** to a recursive sub-diff;
+  - `insert: [(target-position, value), ...]` for each inserted element, in trace order;
+  - `delete: [<source-position>, ...]` for each deleted element, in **descending order** so the patcher's sequential `pop()` does not shift later targets.
+
+Tuples are diffed exactly like lists; tuple-ness is recovered by `patch`, not encoded in the diff.
+
+### Set diff
+
+The differ computes **added** = `b - a` and **removed** = `a - b`, plus a similarity score from the best pairwise matching between them. Then:
+
+- if `s == 0` or every element of `a` was removed, emit `b` directly;
+- otherwise emit a dict with optional `add: <added-set>` and `discard: <removed-set>`.
+
+### Special cases
 
 - `diff([], <non-empty list>) → <non-empty list>` (the target list itself).
-- `diff(<non-empty list>, []) → []` (the empty target list).
-- `diff({a: 1}, {b: 2}) → {replace: {b: 2}}` — wrapped because the target is a dict, and an unwrapped `{b: 2}` would be ambiguous with a dict-patch.
+- `diff(<non-empty list>, []) → []`.
+- `diff({a: 1}, {b: 2}) → {replace: {b: 2}}` — wrapped because the target is a dict and an unwrapped `{b: 2}` would be ambiguous with a dict-patch.
 
-## 3. Applying a diff
+## 4. Invariants
 
-The patch algorithm is fully determined by the source `a` and the diff `d`:
-
-1. If `d` is **not a dict**, return `d` (this is the replacement case).
-2. If `d` is the **empty dict**, return `a` unchanged.
-3. If `d` is a dict and contains the `replace` sentinel, return `d[replace]`.
-4. Otherwise dispatch on `type(a)`:
-   - **`a` is a dict**: copy `a`, then for each `(k, v)` in `d`:
-     - if `k is delete`: for each `key in v`, delete it from `a`;
-     - else if `k` is absent from `a`: insert `a[k] = v` verbatim;
-     - else: recurse — `a[k] = patch(a[k], v)`.
-   - **`a` is a list or tuple**: copy `a` into a list, then:
-     - if `delete in d`: pop each position in `d[delete]` (descending order assumed);
-     - if `insert in d`: insert each `(pos, value)` in order;
-     - for every other (integer) key in `d`: `a[int(k)] = patch(a[int(k)], v)`.
-     - Restore the original container type (tuple → tuple).
-   - **`a` is a set**: copy `a`, discard each element in `d[discard]`, add each element in `d[add]`.
-5. If `a` is a scalar (and `d` was a dict that didn't match any of the above), return `d`.
-
-## 4. Marshaling
-
-`JsonDiffer.marshal(d)` converts an in-memory diff to a fully JSON-compatible (modulo sets) form by escaping Symbols and `$`-prefixed strings:
-
-| Input                              | Marshaled output       |
-| ---------------------------------- | ---------------------- |
-| `Symbol('foo')` (any sentinel)     | `"$foo"`               |
-| A string `"$x"` already starting with `$` | `"$$x"`         |
-| Any other string                   | unchanged              |
-| `dict`, `list`, `tuple`            | recursed into          |
-
-`JsonDiffer.unmarshal(d)` is the inverse: `"$foo"` decodes back to a Symbol if `foo` is a known label, otherwise it strips a single leading `$`. With `escape_str='$$'` or similar, the prefix changes accordingly.
-
-This means a dict diff like:
-
-```python
-{'b': 3, 'c': 4, delete: ['a']}
-```
-
-becomes the JSON-encodable:
-
-```python
-{'b': 3, 'c': 4, '$delete': ['a']}
-```
-
-User data containing literal `$delete` as a string would be marshaled as `"$$delete"`, preserving round-trip safety.
+- `patch(a, diff(a, b)) == b` for all JSON-compatible `a`, `b`.
+- `diff(a, a) == {}`.
+- `marshal` and `unmarshal` are inverses on any diff value.
+- The format does **not** support reversal: there is no `unpatch(b, d) → a` operation.
 
 ## 5. Worked examples
 
@@ -203,10 +230,3 @@ The second is wrapped in `replace` because the target is a dict and would otherw
 ```
 
 The empty dict means "no change". `patch(a, {}) == a`.
-
-## 6. Invariants
-
-- `patch(a, diff(a, b)) == b` for all JSON-compatible `a`, `b`.
-- `diff(a, a) == {}`.
-- `marshal` and `unmarshal` are inverses on any diff value.
-- The format does **not** support reversal: there is no `unpatch(b, d) → a` operation; the diff retains only the information needed to go forward.
