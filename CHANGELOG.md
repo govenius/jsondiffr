@@ -14,6 +14,8 @@ the `compact` syntax remains.
   `RightOnlyJsonDiffSyntax`, and `builtin_syntaxes` have been removed; the
   compact emit/patch logic is now inlined in `JsonDiffer`.
 * CLI: the `-s/--syntax` flag is removed.
+* `JsonDiffer` no longer accepts an `escape_str=` keyword argument; the
+  marshal/unmarshal escape prefix is hardcoded to `$`.
 
 ## 2.2.1 (Aug, 28th 2024)
 

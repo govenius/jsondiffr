@@ -8,8 +8,11 @@ from .symbols import *
 from .symbols import Symbol
 from ._version import __version__
 
+_ESCAPE = '$'
+_SYMBOL_MAP = {_ESCAPE + sym.label: sym for sym in _all_symbols_}
+
 # rules
-# - keys and strings which start with $ (or specified escape_str) are escaped to $$ (or escape_str * 2)
+# - keys and strings which start with $ are escaped to $$
 # - when source is dict and diff is a dict -> patch
 # - when source is list and diff is a list patch dict -> patch
 # - else -> replacement
@@ -119,14 +122,13 @@ class JsonDiffer:
         pass
 
     def __init__(self, load=False, dump=False, marshal=False,
-                 loader=default_loader, dumper=default_dumper, escape_str='$'):
+                 loader=default_loader, dumper=default_dumper):
         """
         :param load: Whether to automatically load JSON from strings or files.
         :param dump: Whether to automatically dump output to JSON strings or files.
         :param marshal: Whether to marshal diffs to handle special characters.
         :param loader: Custom function for loading JSON data.
         :param dumper: Custom function for dumping JSON data.
-        :param escape_str: String used to escape special characters in keys.
         """
         self.options = JsonDiffer.Options()
         self.options.load = load
@@ -134,11 +136,6 @@ class JsonDiffer:
         self.options.marshal = marshal
         self.options.loader = loader
         self.options.dumper = dumper
-        self.options.escape_str = escape_str
-        self._symbol_map = {
-            escape_str + symbol.label: symbol
-            for symbol in _all_symbols_
-        }
 
     def _emit_set_diff(self, a, b, s, added, removed):
         if s == 0.0 or len(removed) == len(a):
@@ -414,12 +411,13 @@ class JsonDiffer:
         else:
             return b
 
-    def _unescape(self, x):
+    @staticmethod
+    def _unescape(x):
         if isinstance(x, str):
-            sym = self._symbol_map.get(x, None)
+            sym = _SYMBOL_MAP.get(x, None)
             if sym is not None:
                 return sym
-            if x.startswith(self.options.escape_str):
+            if x.startswith(_ESCAPE):
                 return x[1:]
         return x
 
@@ -440,11 +438,12 @@ class JsonDiffer:
         else:
             return self._unescape(d)
 
-    def _escape(self, o):
+    @staticmethod
+    def _escape(o):
         if type(o) is Symbol:
-            return self.options.escape_str + o.label
-        if isinstance(o, str) and o.startswith(self.options.escape_str):
-            return self.options.escape_str + o
+            return _ESCAPE + o.label
+        if isinstance(o, str) and o.startswith(_ESCAPE):
+            return _ESCAPE + o
         return o
 
     def marshal(self, d):

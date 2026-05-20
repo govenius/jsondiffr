@@ -33,7 +33,7 @@ the marshalled diff, written to a JSON file, looks like:
 
 ### Structure
 
-A diff value `d` is a JSON-like structure: a `dict`, `list`, `set`, scalar, or `None`. Structural operations are signalled by five **sentinels**. In memory each sentinel is an instance of `jsondiff.Symbol`; in the marshalled (string-encoded) form each appears as `$<label>`. The escape prefix `$` is configurable via `escape_str=`.
+A diff value `d` is a JSON-like structure: a `dict`, `list`, `set`, scalar, or `None`. Structural operations are signalled by five **sentinels**. In memory each sentinel is an instance of `jsondiff.Symbol`; in the marshalled (string-encoded) form each appears as `$<label>`. The escape prefix is always the literal `$`.
 
 | In-memory  | Marshalled  | Used in       | Meaning                                |
 | ---------- | ----------- | ------------- | -------------------------------------- |
@@ -60,7 +60,7 @@ An empty dict `{}` at any level means **no change**.
 | Any other string                          | unchanged         |
 | `dict`, `list`, `tuple`                   | recursed into     |
 
-`JsonDiffer.unmarshal(d)` is the inverse: `"$foo"` decodes back to a Symbol if `foo` is a known label, otherwise it strips a single leading `$`. With a different `escape_str=`, the prefix changes accordingly. `marshal` and `unmarshal` are inverses on any diff value.
+`JsonDiffer.unmarshal(d)` is the inverse: `"$foo"` decodes back to a Symbol if `foo` is a known label, otherwise it strips a single leading `$`. `marshal` and `unmarshal` are inverses on any diff value.
 
 ### JSON serialization
 
