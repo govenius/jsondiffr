@@ -1,4 +1,6 @@
+import copy
 import io
+import json
 import logging
 import os.path
 import sys
@@ -141,6 +143,120 @@ class TestSpecificIssue:
     def test_issue(self, a, b, expected):
         actual = diff(a, b)
         assert actual == expected
+
+
+class TestFormatConformance(unittest.TestCase):
+    """Tests that verify conformance to FORMAT.md."""
+
+    # ----- §1 Marshalled format -----
+
+    def test_marshal_escape_chain(self):
+        differ = JsonDiffer()
+        self.assertEqual({'$$x': 1}, differ.marshal({'$x': 1}))
+        self.assertEqual({'$$$x': 1}, differ.marshal({'$$x': 1}))
+        self.assertEqual({'$x': 1}, differ.unmarshal({'$$x': 1}))
+
+    def test_marshal_does_not_escape_non_string_keys(self):
+        d = {1: {'$v': 2}, insert: [(0, 'x')]}
+        m = JsonDiffer().marshal(d)
+        self.assertIn(1, m)
+        self.assertIn('$insert', m)
+        self.assertEqual({'$$v': 2}, m[1])
+
+    def test_json_wire_fidelity(self):
+        a = {'k': [1, 2, 3]}
+        b = {'k': [1, 3, 4]}
+        m = diff(a, b, marshal=True)
+        roundtripped = json.loads(json.dumps(m))
+        differ = JsonDiffer()
+        self.assertEqual(b, differ.patch(a, differ.unmarshal(roundtripped)))
+
+    # ----- §2 patch() behavior -----
+
+    def test_patch_empty_diff_is_identity(self):
+        for a in [{}, [], (1, 2), set(), {'a': 1}, [1, 2, 3], 0, 'x', None]:
+            self.assertEqual(a, JsonDiffer().patch(a, {}))
+
+    def test_patch_non_dict_diff_is_replacement(self):
+        self.assertEqual([1, 2], JsonDiffer().patch({'a': 1}, [1, 2]))
+        self.assertEqual(42, JsonDiffer().patch({'a': 1}, 42))
+        self.assertEqual('new', JsonDiffer().patch([1, 2], 'new'))
+
+    def test_patch_replace_sentinel(self):
+        self.assertEqual({'x': 9}, JsonDiffer().patch({'a': 1}, {replace: {'x': 9}}))
+        self.assertEqual('gone', JsonDiffer().patch([1, 2], {replace: 'gone'}))
+
+    def test_patch_dict_delete_then_add(self):
+        result = JsonDiffer().patch({'a': 1, 'b': 2}, {'c': 3, delete: ['a']})
+        self.assertEqual({'b': 2, 'c': 3}, result)
+
+    def test_patch_list_delete_descending_order(self):
+        self.assertEqual(['a', 'c'], JsonDiffer().patch(['a', 'b', 'c', 'd'], {delete: [3, 1]}))
+
+    def test_patch_list_integer_keyed_subpatch(self):
+        src = [{'x': 1}, 'b']
+        self.assertEqual([{'x': 2}, 'b'], JsonDiffer().patch(src, {0: {'x': 2}}))
+
+    def test_patch_preserves_tuple_type(self):
+        result = JsonDiffer().patch((1, 2, 3), {0: 9})
+        self.assertEqual((9, 2, 3), result)
+        self.assertIsInstance(result, tuple)
+        self.assertIsInstance(JsonDiffer().patch((1, 2), {}), tuple)
+
+    def test_patch_set_add_and_discard(self):
+        self.assertEqual({1, 3, 9}, JsonDiffer().patch({1, 2, 3}, {discard: {2}, add: {9}}))
+        self.assertEqual({1, 2, 9}, JsonDiffer().patch({1, 2}, {add: {9}}))
+        self.assertEqual({1, 3}, JsonDiffer().patch({1, 2, 3}, {discard: {2}}))
+
+    # ----- §3 diff() behavior -----
+
+    def test_diff_low_similarity_emits_bare_or_wrapped_b(self):
+        self.assertEqual(['x', 'y'], diff([1, 2, 3], ['x', 'y']))
+        self.assertEqual({replace: {'b': 2}}, diff({'a': 1}, {'b': 2}))
+        self.assertEqual({replace: {'a': 1}}, diff([1, 2], {'a': 1}))
+        self.assertEqual([1, 2], diff({'a': 1}, [1, 2]))
+
+    def test_diff_list_delete_positions_descending(self):
+        d = diff(['x', 'a', 'c', 'x'], ['a', 'c'])
+        positions = d[delete]
+        self.assertEqual(sorted(positions, reverse=True), positions)
+
+    def test_diff_unchanged_subkeys_omitted(self):
+        d = diff({'a': 1, 'b': 2}, {'a': 1, 'b': 3})
+        self.assertNotIn('a', d)
+        self.assertEqual(3, d.get('b'))
+
+    def test_diff_against_empty_uses_replace_wrap(self):
+        self.assertEqual({replace: {'a': 1}}, diff({}, {'a': 1}))
+        self.assertEqual({replace: {}}, diff({'a': 1}, {}))
+
+    # ----- §4 Invariants -----
+
+    def test_diff_identity(self):
+        for a in [{}, [], (1, 2), set(), {'a': 1}, [1, 2, 3], 0, 'x', None, True]:
+            self.assertEqual({}, diff(a, a))
+
+    def test_no_unpatch_method(self):
+        self.assertFalse(hasattr(JsonDiffer, 'unpatch'))
+
+    # ----- Cross-cutting -----
+
+    def test_diff_does_not_mutate_inputs(self):
+        a = {'k': [1, 2, 3], 'nested': {'x': 1}}
+        b = {'k': [1, 3, 4], 'nested': {'x': 2}}
+        a_orig = copy.deepcopy(a)
+        b_orig = copy.deepcopy(b)
+        d = diff(a, b)
+        d_orig = copy.deepcopy(d)
+        JsonDiffer().patch(a, d)
+        self.assertEqual(a_orig, a)
+        self.assertEqual(b_orig, b)
+        self.assertEqual(d_orig, d)
+
+    def test_string_delete_is_not_a_sentinel(self):
+        d = diff({'delete': 1}, {'delete': 2})
+        self.assertEqual({'delete': 2}, d)
+        self.assertNotIn(delete, d)
 
 
 class TestLoaders(unittest.TestCase):
