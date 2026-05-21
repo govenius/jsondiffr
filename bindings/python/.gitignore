@@ -1,0 +1,14 @@
+# Build artifacts
+/target/
+*.so
+*.pyd
+
+# Python build outputs
+/dist/
+/build/
+/*.egg-info/
+
+# Editor / IDE
+*.swp
+.vscode/
+.idea/
