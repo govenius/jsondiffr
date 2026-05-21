@@ -1,0 +1,35 @@
+{
+  "description": "List edit combining insertion, deletion, and an integer-keyed sub-patch.",
+  "source": [
+    "x",
+    "a",
+    {
+      "v": 11
+    },
+    "c",
+    "x"
+  ],
+  "target": [
+    "a",
+    {
+      "v": 20
+    },
+    "b",
+    "c"
+  ],
+  "diff": {
+    "1": {
+      "v": 20
+    },
+    "$insert": [
+      [
+        2,
+        "b"
+      ]
+    ],
+    "$delete": [
+      4,
+      0
+    ]
+  }
+}

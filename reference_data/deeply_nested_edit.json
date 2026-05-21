@@ -1,0 +1,42 @@
+{
+  "description": "Multi-level nesting with a single change at depth 3.",
+  "source": {
+    "a": {
+      "b": {
+        "c": [
+          1,
+          2,
+          3
+        ]
+      }
+    }
+  },
+  "target": {
+    "a": {
+      "b": {
+        "c": [
+          1,
+          9,
+          3
+        ]
+      }
+    }
+  },
+  "diff": {
+    "a": {
+      "b": {
+        "c": {
+          "$insert": [
+            [
+              1,
+              9
+            ]
+          ],
+          "$delete": [
+            1
+          ]
+        }
+      }
+    }
+  }
+}

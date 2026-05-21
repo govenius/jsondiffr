@@ -1,0 +1,9 @@
+{
+  "description": "Scalar target produces a bare value diff (no $replace wrap needed).",
+  "source": {
+    "a": 1,
+    "b": 2
+  },
+  "target": 42,
+  "diff": 42
+}

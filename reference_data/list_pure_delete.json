@@ -1,0 +1,17 @@
+{
+  "description": "Single deletion from a list.",
+  "source": [
+    "a",
+    "b",
+    "c"
+  ],
+  "target": [
+    "a",
+    "c"
+  ],
+  "diff": {
+    "$delete": [
+      1
+    ]
+  }
+}

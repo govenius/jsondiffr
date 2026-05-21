@@ -1,0 +1,20 @@
+{
+  "description": "Single insertion into a list.",
+  "source": [
+    "a",
+    "c"
+  ],
+  "target": [
+    "a",
+    "b",
+    "c"
+  ],
+  "diff": {
+    "$insert": [
+      [
+        1,
+        "b"
+      ]
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "description": "Adding all keys to an empty dict produces $replace (similarity = 0).",
+  "source": {},
+  "target": {
+    "a": 1,
+    "b": 2
+  },
+  "diff": {
+    "$replace": {
+      "a": 1,
+      "b": 2
+    }
+  }
+}

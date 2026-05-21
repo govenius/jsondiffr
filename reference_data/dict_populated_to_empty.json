@@ -1,0 +1,10 @@
+{
+  "description": "Removing every key produces $replace with an empty target dict.",
+  "source": {
+    "a": 1
+  },
+  "target": {},
+  "diff": {
+    "$replace": {}
+  }
+}

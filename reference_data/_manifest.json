@@ -1,0 +1,25 @@
+{
+  "format_version": 1,
+  "description": "Reference fixtures for cross-language jsondiff patcher testing. Each <case_id>.json contains source/target/diff; conforming patchers must satisfy patch(source, diff) == target. See FORMAT.md.",
+  "cases": [
+    "dict_add_change_delete",
+    "dict_nested_subpatch",
+    "dict_full_replace_low_similarity",
+    "dict_empty_to_populated",
+    "dict_populated_to_empty",
+    "list_insert_delete_change",
+    "list_pure_insert",
+    "list_pure_delete",
+    "list_low_similarity_bare_target",
+    "list_of_dicts_partial_change",
+    "empty_diff_equal_inputs",
+    "replace_with_scalar_target",
+    "replace_with_dict_target_from_list",
+    "replace_with_list_target_from_dict",
+    "escape_dollar_prefix_data",
+    "escape_double_dollar_prefix_data",
+    "null_to_value",
+    "value_to_null",
+    "deeply_nested_edit"
+  ]
+}

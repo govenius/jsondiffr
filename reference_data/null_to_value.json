@@ -1,0 +1,6 @@
+{
+  "description": "Replacing null with a scalar value.",
+  "source": null,
+  "target": 42,
+  "diff": 42
+}

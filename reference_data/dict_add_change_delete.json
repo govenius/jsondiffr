@@ -1,0 +1,18 @@
+{
+  "description": "Basic dict diff exercising all of add, change, and delete.",
+  "source": {
+    "a": 1,
+    "b": 2
+  },
+  "target": {
+    "b": 3,
+    "c": 4
+  },
+  "diff": {
+    "b": 3,
+    "c": 4,
+    "$delete": [
+      "a"
+    ]
+  }
+}

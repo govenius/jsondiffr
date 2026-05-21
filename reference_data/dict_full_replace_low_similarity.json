@@ -1,0 +1,17 @@
+{
+  "description": "Disjoint keys force a $replace fallback at the top level.",
+  "source": {
+    "a": 1,
+    "b": 2
+  },
+  "target": {
+    "x": 3,
+    "y": 4
+  },
+  "diff": {
+    "$replace": {
+      "x": 3,
+      "y": 4
+    }
+  }
+}

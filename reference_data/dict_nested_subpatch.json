@@ -1,0 +1,28 @@
+{
+  "description": "Nested dict edits propagate as sub-diffs at integer list positions.",
+  "source": {
+    "a": [
+      0,
+      {
+        "b": 4
+      },
+      1
+    ]
+  },
+  "target": {
+    "a": [
+      0,
+      {
+        "b": 5
+      },
+      1
+    ]
+  },
+  "diff": {
+    "a": {
+      "1": {
+        "b": 5
+      }
+    }
+  }
+}

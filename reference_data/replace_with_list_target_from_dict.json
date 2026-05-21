@@ -1,0 +1,14 @@
+{
+  "description": "Type mismatch with a non-dict target stays bare.",
+  "source": {
+    "a": 1
+  },
+  "target": [
+    1,
+    2
+  ],
+  "diff": [
+    1,
+    2
+  ]
+}

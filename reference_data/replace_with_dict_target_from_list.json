@@ -1,0 +1,16 @@
+{
+  "description": "Type mismatch with a dict target is wrapped in $replace.",
+  "source": [
+    1,
+    2,
+    3
+  ],
+  "target": {
+    "k": "v"
+  },
+  "diff": {
+    "$replace": {
+      "k": "v"
+    }
+  }
+}

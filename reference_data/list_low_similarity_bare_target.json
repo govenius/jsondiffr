@@ -1,0 +1,16 @@
+{
+  "description": "Disjoint list elements produce a bare-list replacement diff.",
+  "source": [
+    1,
+    2,
+    3
+  ],
+  "target": [
+    "x",
+    "y"
+  ],
+  "diff": [
+    "x",
+    "y"
+  ]
+}

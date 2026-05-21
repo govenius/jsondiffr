@@ -1,0 +1,18 @@
+{
+  "description": "Equal inputs yield the empty-dict no-change diff.",
+  "source": {
+    "a": [
+      1,
+      2,
+      3
+    ]
+  },
+  "target": {
+    "a": [
+      1,
+      2,
+      3
+    ]
+  },
+  "diff": {}
+}
