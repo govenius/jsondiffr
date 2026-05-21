@@ -1,0 +1,7 @@
+# Build artifacts
+/target/
+
+# IDE / editor scratch
+*.swp
+.vscode/
+.idea/
