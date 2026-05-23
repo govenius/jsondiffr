@@ -5,6 +5,8 @@
 //!   `from_json(str)` and `to_python(path=None)` methods.
 //! * `patch(source, diff)` — apply a marshalled-format diff (str) to a
 //!   source (JsonValue or str), returning a new `JsonValue`.
+//! * `diff(source, target_json)` — compute a diff between a source
+//!   (JsonValue) and a target (JSON string).
 //! * `ParseError`, `PatchError` — module-level exceptions.
 
 use pyo3::exceptions::{PyIndexError, PyKeyError, PyTypeError};
@@ -167,6 +169,58 @@ fn extract_source(source: &Bound<'_, PyAny>) -> PyResult<core::JsonValue> {
     }
 }
 
+// ── diff() ─────────────────────────────────────────────────────────────────
+
+#[pyfunction]
+fn diff(source: &Bound<'_, PyAny>, target_json: &str) -> PyResult<serde_json::Value> {
+    let src = extract_source(source)?;
+    let target_val: serde_json::Value =
+        serde_json::from_str(target_json).map_err(|e| ParseError::new_err(e.to_string()))?;
+    let target = core::parse_source(target_val);
+    
+    let diff_val = core::diff(&src, &target);
+    
+    // To return a Python-friendly dict/list, we convert the DiffValue back to a 
+    // serde_json::Value. Since DiffValue is an internal AST, we'll use a 
+    // helper to convert it to a JSON-compatible structure.
+    Ok(diff_value_to_serde(diff_val))
+}
+
+/// Helper to convert the internal DiffValue AST into a serde_json::Value
+/// that represents the marshalled format (using $sentinels).
+fn diff_value_to_serde(dv: core::DiffValue) -> serde_json::Value {
+    match dv {
+        core::DiffValue::Empty => serde_json::json!({}),
+        core::DiffValue::Replace(v) => serde_json::to_value(v).unwrap_or(serde_json::Value::Null),
+        core::DiffValue::Patch(p) => {
+            let mut map = serde_json::Map::new();
+            
+            if let Some(replace) = p.replace {
+                map.insert(serde_json::json!("$replace"), serde_json::to_value(replace).unwrap_or(serde_json::Value::Null));
+            }
+            if let Some(delete) = p.delete {
+                map.insert(serde_json::json!("$delete"), serde_json::to_value(delete).unwrap_or(serde_json::Value::Null));
+            }
+            if let Some(insert) = p.insert {
+                // Convert Vec<(usize, JsonValue)> to the marshalled format: [[pos, val], ...]
+                let insert_list: Vec<serde_json::Value> = insert.into_iter()
+                    .map(|(pos, val)| {
+                        serde_json::json!([pos, serde_json::to_value(val).unwrap_or(serde_json::Value::Null)])
+                    })
+                    .collect();
+                map.insert(serde_json::json!("$insert"), serde_json::Value::Array(insert_list));
+            }
+            // Add/Discard are not implemented in Rust yet
+            
+            for (k, sub_dv) in p.entries {
+                map.insert(serde_json::Value::String(k.to_string()), diff_value_to_serde(sub_dv));
+            }
+            
+            serde_json::Value::Object(map)
+        }
+    }
+}
+
 // ── Module registration ────────────────────────────────────────────────────
 
 #[pymodule]
@@ -174,6 +228,7 @@ fn jsondiffr(m: &Bound<'_, PyModule>) -> PyResult<()> {
     let py = m.py();
     m.add_class::<JsonValue>()?;
     m.add_function(wrap_pyfunction!(patch, m)?)?;
+    m.add_function(wrap_pyfunction!(diff, m)?)?;
     m.add("ParseError", py.get_type::<ParseError>())?;
     m.add("PatchError", py.get_type::<PatchError>())?;
     Ok(())
