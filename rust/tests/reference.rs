@@ -4,7 +4,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use jsondiffr::{parse_diff, parse_source, patch};
+use jsondiffr::{parse_diff, parse_source, patch, diff};
 
 fn reference_data_dir() -> PathBuf {
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
@@ -53,12 +53,23 @@ fn all_reference_fixtures_pass() {
             }
         };
 
+        // 1. Test the provided diff
         match patch(&source, &parsed_diff) {
             Ok(actual) if actual == target => {}
             Ok(actual) => failures.push(format!(
-                "{case_id}: patched value != target\n  got:  {actual:#?}\n  want: {target:#?}"
+                "{case_id}: patch(source, provided_diff) result != target\n  got:  {actual:#?}\n  want: {target:#?}"
             )),
-            Err(e) => failures.push(format!("{case_id}: patch returned error: {e}")),
+            Err(e) => failures.push(format!("{case_id}: patch(source, provided_diff) returned error: {e}")),
+        }
+
+        // 2. Test the computed diff
+        let computed_diff = diff(&source, &target);
+        match patch(&source, &computed_diff) {
+            Ok(actual) if actual == target => {}
+            Ok(actual) => failures.push(format!(
+                "{case_id}: patch(source, diff(source, target)) result != target\n  got:  {actual:#?}\n  want: {target:#?}"
+            )),
+            Err(e) => failures.push(format!("{case_id}: patch(source, diff(source, target)) returned error: {e}")),
         }
     }
 
