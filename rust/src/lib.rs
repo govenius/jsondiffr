@@ -33,11 +33,13 @@
 //!   Python reference implementation).
 
 mod diff;
+mod differ;
 mod error;
 mod patch;
 mod value;
 
 pub use diff::{parse_diff, DiffValue, Patch};
+pub use differ::diff;
 pub use error::{ParseError, PatchError};
 pub use patch::patch;
 pub use value::{JsonNumber, JsonValue};
