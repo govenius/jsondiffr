@@ -73,7 +73,7 @@ fn diff_dict(a: &BTreeMap<Arc<str>, JsonValue>, b: &BTreeMap<Arc<str>, JsonValue
         }
     }
 
-    let removed_count = a.keys().filter(|k| !b.contains_key(k)).count();
+    let removed_count = a.keys().filter(|k| !b.contains_key(k.as_ref())).count();
     total_count += removed_count;
 
     // Similarity score s = (matches) / total

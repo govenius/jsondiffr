@@ -128,7 +128,7 @@ mod tests {
         for case_a_json in cases {
             let case_b_json = json!({"a": 2, "b": {"c": 3}, "d": 4});
             
-            let a = parse_source(case_a_json);
+            let a = parse_source(case_a_json.clone());
             let b = parse_source(case_b_json);
             
             let d = diff(&a, &b);
