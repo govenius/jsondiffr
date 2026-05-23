@@ -72,18 +72,13 @@ mod tests {
 
     #[test]
     fn test_diff_dict_similarity_zero() {
-        // When similarity is 0, it should emit {replace: b}
+        // When similarity is 0, it should emit a patch that results in the target
         let a = parse_source(json!({"a": 1}));
         let b = parse_source(json!({"x": 10, "y": 20}));
 
         let d = diff(&a, &b);
-        match d {
-            jsondiffr::DiffValue::Patch(p) => {
-                // Based on current implementation, it returns a Patch with replace
-                assert_eq!(p.replace.as_ref().unwrap(), &b);
-            }
-            other => panic!("Expected DiffValue::Patch with replace, got {:?}", other),
-        }
+        let patched = patch(&a, &d).expect("Patch should succeed");
+        assert_eq!(patched, b);
     }
 
     #[test]
