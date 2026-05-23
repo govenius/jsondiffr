@@ -1,6 +1,6 @@
 //! Implementation of the `diff(a, b)` function as specified in `FORMAT.md`.
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap};
 use std::sync::Arc;
 
 use crate::diff::{DiffValue, Patch};
