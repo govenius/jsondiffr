@@ -45,4 +45,25 @@ impl JsonValue {
             )),
         }
     }
+
+    pub fn to_serde(&self) -> serde_json::Value {
+        match self {
+            JsonValue::Null => serde_json::Value::Null,
+            JsonValue::Bool(b) => serde_json::Value::Bool(*b),
+            JsonValue::Number(n) => serde_json::Value::Number(n.0.clone()),
+            JsonValue::String(s) => serde_json::Value::String(s.to_string()),
+            JsonValue::Array(a) => {
+                serde_json::Value::Array(
+                    a.iter().map(|v| v.to_serde()).collect(),
+                )
+            }
+            JsonValue::Object(m) => {
+                let mut map = serde_json::Map::new();
+                for (k, v) in m.iter() {
+                    map.insert(k.to_string(), v.to_serde());
+                }
+                serde_json::Value::Object(map)
+            }
+        }
+    }
 }
