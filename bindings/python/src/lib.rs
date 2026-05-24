@@ -5,8 +5,8 @@
 //!   `from_json(str)` and `to_python(path=None)` methods.
 //! * `patch(source, diff)` — apply a marshalled-format diff (str) to a
 //!   source (JsonValue or str), returning a new `JsonValue`.
-//! * `diff(source, target_json)` — compute a diff between a source
-//!   (JsonValue) and a target (JSON string).
+//! * `diff(source, target)` — compute a diff between a source
+//!   (JsonValue) and a target (JsonValue or str).
 //! * `ParseError`, `PatchError` — module-level exceptions.
 
 use pyo3::exceptions::{PyIndexError, PyKeyError, PyTypeError};
@@ -172,13 +172,11 @@ fn extract_source(source: &Bound<'_, PyAny>) -> PyResult<core::JsonValue> {
 // ── diff() ─────────────────────────────────────────────────────────────────
 
 #[pyfunction]
-fn diff(source: &Bound<'_, PyAny>, target_json: &str) -> PyResult<serde_json::Value> {
+fn diff(source: &Bound<'_, PyAny>, target: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
     let src = extract_source(source)?;
-    let target_val: serde_json::Value =
-        serde_json::from_str(target_json).map_err(|e| ParseError::new_err(e.to_string()))?;
-    let target = core::parse_source(target_val);
+    let target_val = extract_source(target)?;
     
-    let diff_val = core::diff(&src, &target);
+    let diff_val = core::diff(&src, &target_val);
     
     // To return a Python-friendly dict/list, we convert the DiffValue back to a 
     // serde_json::Value. Since DiffValue is an internal AST, we'll use a 
