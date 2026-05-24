@@ -27,6 +27,72 @@ pub enum DiffValue {
     Patch(Arc<Patch>),
 }
 
+impl DiffValue {
+    /// Converts the `DiffValue` into a `serde_json::Value` following the
+    /// marshaling rules in FORMAT.md.
+    pub fn to_serde(&self) -> Sj {
+        match self {
+            DiffValue::Empty => Sj::Object(serde_json::Map::new()),
+            DiffValue::Replace(v) => v.to_serde(),
+            DiffValue::Patch(p) => {
+                let mut map = serde_json::Map::new();
+
+                if let Some(replace_val) = &p.replace {
+                    map.insert(REPLACE.to_string(), replace_val.to_serde());
+                }
+
+                if let Some(delete_vals) = &p.delete {
+                    let mut del_arr = Vec::new();
+                    for v in delete_vals {
+                        del_arr.push(v.to_serde());
+                    }
+                    map.insert(DELETE.to_string(), Sj::Array(del_arr));
+                }
+
+                if let Some(insert_vals) = &p.insert {
+                    let mut ins_arr = Vec::new();
+                    for (pos, val) in insert_vals {
+                        let mut pair = Vec::new();
+                        pair.push(Sj::from(*pos));
+                        pair.push(val.to_serde());
+                        ins_arr.push(Sj::Array(pair));
+                    }
+                    map.insert(INSERT.to_string(), Sj::Array(ins_arr));
+                }
+
+                if let Some(add_vals) = &p.add {
+                    let mut add_arr = Vec::new();
+                    for v in add_vals {
+                        add_arr.push(v.to_serde());
+                    }
+                    map.insert(ADD.to_string(), Sj::Array(add_arr));
+                }
+
+                if let Some(discard_vals) = &p.discard {
+                    let mut disc_arr = Vec::new();
+                    for v in discard_vals {
+                        disc_arr.push(v.to_serde());
+                    }
+                    map.insert(DISCARD.to_string(), Sj::Array(disc_arr));
+                }
+
+                for (key, entry) in p.entries.iter() {
+                    // Marshal the key: escape $ if it's a data key.
+                    // According to FORMAT.md §1: "A string "$x" already starting with $ -> "$$x""
+                    let marshalled_key = if key.starts_with('$') {
+                        format!("${}", key)
+                    } else {
+                        key.to_string()
+                    };
+                    map.insert(marshalled_key, entry.to_serde());
+                }
+
+                Sj::Object(map)
+            }
+        }
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct Patch {
     pub replace: Option<JsonValue>,
