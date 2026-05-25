@@ -132,4 +132,55 @@ mod tests {
             assert_eq!(patched, b, "Roundtrip failed for source: {:?}", case_a_json);
         }
     }
+
+    #[test]
+    fn test_diff_marshal_roundtrip() {
+        use jsondiffr::{parse_diff, DiffValue};
+        use std::sync::Arc;
+
+        // Test cases for DiffValue -> serde_json::Value -> String -> DiffValue
+        let cases = vec![
+            // Empty diff
+            DiffValue::Empty,
+            // Replace
+            DiffValue::Replace(parse_source(json!({"a": 1}))),
+            // Patch with $replace
+            DiffValue::Patch(Arc::new(jsondiffr::diff::Patch {
+                replace: Some(parse_source(json!({"a": 1}))),
+                ..Default::default()
+            })),
+            // Patch with $delete
+            DiffValue::Patch(Arc::new(jsondiffr::diff::Patch {
+                delete: Some(vec![parse_source(json!(1))]),
+                ..Default::default()
+            })),
+            // Patch with $insert
+            DiffValue::Patch(Arc::new(jsondiffr::diff::Patch {
+                insert: Some(vec![(1, parse_source(json!(10)))]),
+                ..Default::default()
+            })),
+            // Patch with data keys (including escaped $)
+            DiffValue::Patch(Arc::new(jsondiffr::diff::Patch {
+                entries: {
+                    let mut m = std::collections::BTreeMap::new();
+                    m.insert(Arc::from("normal"), DiffValue::Replace(parse_source(json!(2))));
+                    m.insert(Arc::from("$escaped"), DiffValue::Replace(parse_source(json!(3))));
+                    m
+                }.into_iter().collect(),
+                ..Default::default()
+            })),
+        ];
+
+        for d in cases {
+            let marshalled_val = d.to_serde();
+            let marshalled_str = serde_json::to_string(&marshalled_val).expect("Failed to serialize");
+            let unmarshalled_val: serde_json::Value = serde_json::from_str(&marshalled_str).expect("Failed to deserialize");
+            let unmarshalled_diff = parse_diff(unmarshalled_val).expect("Failed to parse diff");
+
+            // We compare the marshalled serde_json::Value representations 
+            // because DiffValue doesn't implement PartialEq (it contains Arc<Patch> which contains BTreeMap<Arc<str>, DiffValue>)
+            // and we want to ensure the JSON structure is identical.
+            assert_eq!(d.to_serde(), unmarshalled_diff.to_serde(), "Roundtrip failed for diff: {:?}", d);
+        }
+    }
 }
