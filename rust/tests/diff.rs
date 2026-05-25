@@ -135,7 +135,7 @@ mod tests {
 
     #[test]
     fn test_diff_marshal_roundtrip() {
-        use jsondiffr::{parse_diff, DiffValue};
+        use jsondiffr::{parse_diff, DiffValue, Patch};
         use std::sync::Arc;
 
         // Test cases for DiffValue -> serde_json::Value -> String -> DiffValue
@@ -145,28 +145,28 @@ mod tests {
             // Replace
             DiffValue::Replace(parse_source(json!({"a": 1}))),
             // Patch with $replace
-            DiffValue::Patch(Arc::new(jsondiffr::diff::Patch {
+            DiffValue::Patch(Arc::new(Patch {
                 replace: Some(parse_source(json!({"a": 1}))),
                 ..Default::default()
             })),
             // Patch with $delete
-            DiffValue::Patch(Arc::new(jsondiffr::diff::Patch {
+            DiffValue::Patch(Arc::new(Patch {
                 delete: Some(vec![parse_source(json!(1))]),
                 ..Default::default()
             })),
             // Patch with $insert
-            DiffValue::Patch(Arc::new(jsondiffr::diff::Patch {
+            DiffValue::Patch(Arc::new(Patch {
                 insert: Some(vec![(1, parse_source(json!(10)))]),
                 ..Default::default()
             })),
             // Patch with data keys (including escaped $)
-            DiffValue::Patch(Arc::new(jsondiffr::diff::Patch {
+            DiffValue::Patch(Arc::new(Patch {
                 entries: {
                     let mut m = std::collections::BTreeMap::new();
                     m.insert(Arc::from("normal"), DiffValue::Replace(parse_source(json!(2))));
                     m.insert(Arc::from("$escaped"), DiffValue::Replace(parse_source(json!(3))));
                     m
-                }.into_iter().collect(),
+                },
                 ..Default::default()
             })),
         ];
