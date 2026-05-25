@@ -6,7 +6,7 @@
 //! * `patch(source, diff)` — apply a marshalled-format diff (str) to a
 //!   source (JsonValue or str), returning a new `JsonValue`.
 //! * `diff(source, target)` — compute a diff between a source
-//!   (JsonValue) and a target (JsonValue or str).
+//!   (JsonValue) and a target (JsonValue or str), returning a JSON string.
 //! * `ParseError`, `PatchError` — module-level exceptions.
 
 use pyo3::exceptions::{PyIndexError, PyKeyError, PyTypeError};
@@ -172,19 +172,19 @@ fn extract_source(source: &Bound<'_, PyAny>) -> PyResult<core::JsonValue> {
 // ── diff() ─────────────────────────────────────────────────────────────────
 
 #[pyfunction]
-fn diff(source: &Bound<'_, PyAny>, target: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
+fn diff(source: &Bound<'_, PyAny>, target: &Bound<'_, PyAny>) -> PyResult<String> {
     let src = extract_source(source)?;
     let target_val = extract_source(target)?;
     
     let diff_val = core::diff(&src, &target_val);
     
-    // To return a Python-friendly dict/list, we convert the DiffValue back to a 
-    // serde_json::Value. Since DiffValue is an internal AST, we'll use a 
-    // helper to convert it to a JSON-compatible structure.
-    Ok(diff_value_to_serde(diff_val))
+    // Convert the internal DiffValue AST into a serde_json::Value,
+    // then serialize it to a JSON string to return to Python.
+    let marshalled_val = diff_value_to_serde(diff_val);
+    serde_json::to_string(&marshalled_val).map_err(|e| ParseError::new_err(e.to_string()))
 }
 
-/// Helper to convert the internal DiffValue AST into a serde_json::Value
+/// Helper to convert the internal DiffValue AST into a `serde_json::Value`
 /// that represents the marshalled format (using $sentinels).
 fn diff_value_to_serde(dv: core::DiffValue) -> serde_json::Value {
     match dv {
