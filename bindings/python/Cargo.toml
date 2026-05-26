@@ -2,7 +2,7 @@
 name = "jsondiffr-py"
 version = "0.1.0"
 edition = "2021"
-description = "PyO3 bindings for the jsondiffr patcher."
+description = "PyO3 bindings for the jsondiffr patcher and differ."
 
 [lib]
 name = "jsondiffr"

@@ -2,7 +2,7 @@
 name = "jsondiffr"
 version = "0.1.0"
 edition = "2021"
-description = "Rust port of jsondiff. Currently provides the patcher; differ is not yet implemented."
+description = "Rust port of jsondiff. Provides both a patcher and a differ."
 
 [dependencies]
 serde_json = "1"

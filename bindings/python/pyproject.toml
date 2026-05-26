@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 name = "jsondiffr"
 version = "0.1.0"
-description = "Python bindings for the Rust jsondiffr patcher."
+description = "Python bindings for the jsondiffr patcher and differ."
 requires-python = ">=3.9"
 classifiers = ["Programming Language :: Rust"]
 
