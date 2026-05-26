@@ -183,4 +183,32 @@ mod tests {
             assert_eq!(d.to_serde(), unmarshalled_diff.to_serde(), "Roundtrip failed for diff: {:?}", d);
         }
     }
+
+    #[test]
+    fn test_issue_59_empty_list_target() {
+        let a = parse_source(json!([{"a": true}]));
+        let b = parse_source(json!([]));
+        let d = diff(&a, &b);
+        assert_eq!(patch(&a, &d).unwrap(), b);
+    }
+
+    #[test]
+    fn test_issue_59_empty_list_source() {
+        let a = parse_source(json!([]));
+        let b = parse_source(json!([{"a": true}]));
+        let d = diff(&a, &b);
+        assert_eq!(patch(&a, &d).unwrap(), b);
+    }
+
+    #[test]
+    fn test_issue_36_dict_replace() {
+        let a = parse_source(json!({1: 2}));
+        let b = parse_source(json!({5: 3}));
+        let d = diff(&a, &b);
+        // Should be a replacement of the whole object
+        match d {
+            jsondiffr::DiffValue::Replace(val) => assert_eq!(val, b),
+            _ => panic!("Expected Replace for issue 36, got {:?}", d),
+        }
+    }
 }
