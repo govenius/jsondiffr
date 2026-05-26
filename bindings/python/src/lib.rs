@@ -6,7 +6,7 @@
 //! * `patch(source, diff)` — apply a marshalled-format diff (str) to a
 //!   source (JsonValue or str), returning a new `JsonValue`.
 //! * `diff(source, target)` — compute a diff between a source
-//!   (JsonValue) and a target (JsonValue or str), returning a JSON string.
+//!   (JsonValue or str) and a target (JsonValue or str), returning a JSON string.
 //! * `ParseError`, `PatchError` — module-level exceptions.
 
 use pyo3::exceptions::{PyIndexError, PyKeyError, PyTypeError};
@@ -148,7 +148,7 @@ fn json_value_to_py<'py>(
 
 #[pyfunction]
 fn patch(source: &Bound<'_, PyAny>, diff: &str) -> PyResult<JsonValue> {
-    let src = extract_source(source)?;
+    let src = extract_jsonvalue(source)?;
     let diff_value: serde_json::Value =
         serde_json::from_str(diff).map_err(|e| ParseError::new_err(e.to_string()))?;
     let parsed_diff =
@@ -157,7 +157,7 @@ fn patch(source: &Bound<'_, PyAny>, diff: &str) -> PyResult<JsonValue> {
     Ok(JsonValue { inner: out })
 }
 
-fn extract_source(source: &Bound<'_, PyAny>) -> PyResult<core::JsonValue> {
+fn extract_jsonvalue(source: &Bound<'_, PyAny>) -> PyResult<core::JsonValue> {
     if let Ok(jv) = source.extract::<PyRef<JsonValue>>() {
         Ok(jv.inner.clone())
     } else if let Ok(s) = source.extract::<String>() {
@@ -165,7 +165,7 @@ fn extract_source(source: &Bound<'_, PyAny>) -> PyResult<core::JsonValue> {
             serde_json::from_str(&s).map_err(|e| ParseError::new_err(e.to_string()))?;
         Ok(core::parse_source(v))
     } else {
-        Err(PyTypeError::new_err("source must be JsonValue or str"))
+        Err(PyTypeError::new_err("source/target JSON must be specified as JsonValue or str"))
     }
 }
 
@@ -173,8 +173,8 @@ fn extract_source(source: &Bound<'_, PyAny>) -> PyResult<core::JsonValue> {
 
 #[pyfunction]
 fn diff(source: &Bound<'_, PyAny>, target: &Bound<'_, PyAny>) -> PyResult<String> {
-    let src = extract_source(source)?;
-    let target_val = extract_source(target)?;
+    let src = extract_jsonvalue(source)?;
+    let target_val = extract_jsonvalue(target)?;
     
     let diff_val = core::diff(&src, &target_val);
     

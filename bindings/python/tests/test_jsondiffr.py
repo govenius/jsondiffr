@@ -23,9 +23,12 @@ def _cases():
 def test_reference_fixture(case_id):
     fixture = json.loads((REF_DIR / f"{case_id}.json").read_text())
     source_str = json.dumps(fixture["source"])
-    diff_str = json.dumps(fixture["diff"])
-    result = jsondiffr.patch(source_str, diff_str)
-    assert result.to_python() == fixture["target"]
+    for diff_str in [
+        json.dumps(fixture["diff"]), # Test patching with reference diff
+        jsondiffr.diff(source_str, json.dumps(fixture["target"])), # Test with freshly-generated diff
+        ]:
+        result = jsondiffr.patch(source_str, diff_str)
+        assert result.to_python() == fixture["target"]
 
 
 def test_jsonvalue_amortized_source():
