@@ -43,8 +43,8 @@ pub fn diff(a: &JsonValue, b: &JsonValue) -> DiffValue {
 fn diff_dict(a: &BTreeMap<Arc<str>, JsonValue>, b: &BTreeMap<Arc<str>, JsonValue>) -> DiffValue {
     let mut entries = BTreeMap::new();
     let mut deleted = Vec::new();
+    let mut added_count = 0;
     let mut changed_count = 0;
-    let mut total_count = 0;
 
     // Keys in a but not in b (Removed)
     for k in a.keys() {
@@ -55,7 +55,6 @@ fn diff_dict(a: &BTreeMap<Arc<str>, JsonValue>, b: &BTreeMap<Arc<str>, JsonValue
 
     // Keys in both (Changed) or in b but not in a (Added)
     for (k, b_val) in b {
-        total_count += 1;
         if let Some(a_val) = a.get(k) {
             if a_val != b_val {
                 let sub_diff = diff(a_val, b_val);
@@ -69,26 +68,22 @@ fn diff_dict(a: &BTreeMap<Arc<str>, JsonValue>, b: &BTreeMap<Arc<str>, JsonValue
         } else {
             // Added
             entries.insert(k.clone(), DiffValue::Replace(b_val.clone()));
-            changed_count += 1;
+            added_count += 1;
         }
     }
 
-    let removed_count = a.keys().filter(|k| !b.contains_key(k.as_ref())).count();
-    total_count += removed_count;
-
     // Similarity score s = (matches) / total
-    let similarity = if total_count == 0 {
+    let removed_count = deleted.len();
+    let keys_in_a_or_b_count = b.len() + removed_count;
+    let similarity = if keys_in_a_or_b_count == 0 {
         1.0
     } else {
-        let matches = (total_count - changed_count - removed_count) as f64;
-        matches / total_count as f64
+        let matches = (keys_in_a_or_b_count - changed_count - added_count - removed_count) as f64;
+        matches / keys_in_a_or_b_count as f64
     };
 
-    if similarity <= 0.0 && !deleted.is_empty() && entries.is_empty() {
-        return DiffValue::Patch(Arc::new(Patch {
-            replace: Some(JsonValue::Object(Arc::new(b.clone()))),
-            ..Default::default()
-        }));
+    if similarity <= 0.0 {
+        return DiffValue::Replace(JsonValue::Object(Arc::new(b.clone())));
     }
 
     if similarity >= 1.0 && entries.is_empty() && deleted.is_empty() {
@@ -160,12 +155,6 @@ fn diff_list(a: &Vec<JsonValue>, b: &Vec<JsonValue>) -> DiffValue {
             j -= 1;
         }
     }
-    
-    // Re-calculating deletions correctly based on index i-1
-    // The loop above was a bit messy with the 'else' block. 
-    // Let's fix the logic to ensure we get the correct indices.
-    // Actually, the logic above for `deleted.push` is correct for the index.
-    // But I need to fix the `as_number` error.
 
     // Sort deletions descending as required by FORMAT.md
     deleted.sort_by(|x, y| {

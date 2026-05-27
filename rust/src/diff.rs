@@ -33,7 +33,11 @@ impl DiffValue {
     pub fn to_serde(&self) -> Sj {
         match self {
             DiffValue::Empty => Sj::Object(serde_json::Map::new()),
-            DiffValue::Replace(v) => v.to_serde(),
+            DiffValue::Replace(v) => {
+                let mut map = serde_json::Map::new();
+                map.insert(REPLACE.to_string(), v.to_serde());
+                Sj::Object(map)
+            }
             DiffValue::Patch(p) => {
                 let mut map = serde_json::Map::new();
 
