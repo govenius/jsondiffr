@@ -15,8 +15,8 @@ fn test_basic_identities() {
     ];
 
     for (a_json, b_json) in cases {
-        let a = parse_source(a_json);
-        let b = parse_source(b_json);
+        let a = parse_source(a_json.clone());
+        let b = parse_source(b_json.clone());
         let d = diff(&a, &b);
         match d {
             jsondiffr::DiffValue::Empty => {}
@@ -35,8 +35,8 @@ fn test_basic_replacements() {
     ];
 
     for (a_json, b_json) in cases {
-        let a = parse_source(a_json);
-        let b = parse_source(b_json);
+        let a = parse_source(a_json.clone());
+        let b = parse_source(b_json.clone());
         let d = diff(&a, &b);
         match d {
             jsondiffr::DiffValue::Replace(val) => assert_eq!(val, b),

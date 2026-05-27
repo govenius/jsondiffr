@@ -202,9 +202,10 @@ mod tests {
 
     #[test]
     fn test_issue_36_dict_replace() {
-        let a = parse_source(json!({1: 2}));
-        let b = parse_source(json!({5: 3}));
+        let a = parse_source(json!({"1": 2}));
+        let b = parse_source(json!({"5": 3}));
         let d = diff(&a, &b);
+        assert_eq!(patch(&a, &d).unwrap(), b);
         // Should be a replacement of the whole object
         match d {
             jsondiffr::DiffValue::Replace(val) => assert_eq!(val, b),
