@@ -16,7 +16,7 @@ const INSERT: &str = "$insert";
 const ADD: &str = "$add";
 const DISCARD: &str = "$discard";
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum DiffValue {
     /// §2 rule 1: diff was not a JSON object — wholesale replacement.
     Replace(JsonValue),
@@ -97,7 +97,7 @@ impl DiffValue {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub struct Patch {
     pub replace: Option<JsonValue>,
     /// Non-sentinel object keys mapped to their sub-diffs. For dict sources

@@ -73,10 +73,11 @@ fn all_reference_fixtures_pass() {
         // 3. Diff roundtrip: DiffValue -> serde_json::Value -> String -> serde_json::Value -> DiffValue
         let diff_roundtrip_val = serde_json::to_string(&parsed_diff.to_serde()).expect("diff to_string failed");
         let diff_roundtrip_json: serde_json::Value = serde_json::from_str(&diff_roundtrip_val).expect("diff from_str failed");
-        let diff_roundtrip = parse_diff(diff_roundtrip_json).expect("diff roundtrip parse_diff failed");
-        // Note: DiffValue equality is not explicitly shown in summaries, 
-        // but we assume it is implemented or we compare their serde representations.
-        if parsed_diff.to_serde() != diff_roundtrip.to_serde() {
+        let diff_roundtrip = parse_diff(diff_roundtrip_json.clone()).expect("diff roundtrip parse_diff failed");
+        if parsed_diff != diff_roundtrip {
+            println!("{case_id}:    Fixture diff: {:?}", fixture["diff"].clone());
+            println!("{case_id}: Serialized diff: {:?}", diff_roundtrip_json.clone());
+            println!("{case_id}:  Roundtrip diff: {:?}", diff_roundtrip.to_serde());
             failures.push(format!("{case_id}: diff roundtrip failed"));
         }
 
