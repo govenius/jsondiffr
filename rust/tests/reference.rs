@@ -53,6 +53,33 @@ fn all_reference_fixtures_pass() {
             }
         };
 
+        // Roundtrip checks
+        // 1. Source roundtrip: JsonValue -> serde_json::Value -> String -> serde_json::Value -> JsonValue
+        let source_roundtrip_val = serde_json::to_string(&source.to_serde()).expect("source to_string failed");
+        let source_roundtrip_json: serde_json::Value = serde_json::from_str(&source_roundtrip_val).expect("source from_str failed");
+        let source_roundtrip: jsondiffr::JsonValue = jsondiffr::JsonValue::from_serde(source_roundtrip_json);
+        if source != source_roundtrip {
+            failures.push(format!("{case_id}: source roundtrip failed"));
+        }
+
+        // 2. Target roundtrip: JsonValue -> serde_json::Value -> String -> serde_json::Value -> JsonValue
+        let target_roundtrip_val = serde_json::to_string(&target.to_serde()).expect("target to_string failed");
+        let target_roundtrip_json: serde_json::Value = serde_json::from_str(&target_roundtrip_val).expect("target from_str failed");
+        let target_roundtrip: jsondiffr::JsonValue = jsondiffr::JsonValue::from_serde(target_roundtrip_json);
+        if target != target_roundtrip {
+            failures.push(format!("{case_id}: target roundtrip failed"));
+        }
+
+        // 3. Diff roundtrip: DiffValue -> serde_json::Value -> String -> serde_json::Value -> DiffValue
+        let diff_roundtrip_val = serde_json::to_string(&parsed_diff.to_serde()).expect("diff to_string failed");
+        let diff_roundtrip_json: serde_json::Value = serde_json::from_str(&diff_roundtrip_val).expect("diff from_str failed");
+        let diff_roundtrip = parse_diff(diff_roundtrip_json).expect("diff roundtrip parse_diff failed");
+        // Note: DiffValue equality is not explicitly shown in summaries, 
+        // but we assume it is implemented or we compare their serde representations.
+        if parsed_diff.to_serde() != diff_roundtrip.to_serde() {
+            failures.push(format!("{case_id}: diff roundtrip failed"));
+        }
+
         // 1. Test the provided diff
         match patch(&source, &parsed_diff) {
             Ok(actual) if actual == target => {}
