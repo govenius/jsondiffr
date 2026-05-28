@@ -55,7 +55,7 @@ fn all_reference_fixtures_pass() {
 
         // Serialization roundtrip checks
         // 1. Source roundtrip: JsonValue -> serde_json::Value -> String -> serde_json::Value -> JsonValue
-        let source_roundtrip_val = serde_json::to_string(&source.to_serde(false)).expect("source to_string failed");
+        let source_roundtrip_val = serde_json::to_string(&source.to_serde()).expect("source to_string failed");
         let source_roundtrip_json: serde_json::Value = serde_json::from_str(&source_roundtrip_val).expect("source from_str failed");
         let source_roundtrip: jsondiffr::JsonValue = jsondiffr::JsonValue::from_serde(source_roundtrip_json);
         if source != source_roundtrip {
@@ -63,7 +63,7 @@ fn all_reference_fixtures_pass() {
         }
 
         // 2. Target roundtrip: JsonValue -> serde_json::Value -> String -> serde_json::Value -> JsonValue
-        let target_roundtrip_val = serde_json::to_string(&target.to_serde(false)).expect("target to_string failed");
+        let target_roundtrip_val = serde_json::to_string(&target.to_serde()).expect("target to_string failed");
         let target_roundtrip_json: serde_json::Value = serde_json::from_str(&target_roundtrip_val).expect("target from_str failed");
         let target_roundtrip: jsondiffr::JsonValue = jsondiffr::JsonValue::from_serde(target_roundtrip_json);
         if target != target_roundtrip {
