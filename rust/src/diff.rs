@@ -114,7 +114,13 @@ pub struct Patch {
 pub fn parse_diff(v: Sj) -> Result<DiffValue, ParseError> {
     match v {
         Sj::Object(m) if m.is_empty() => Ok(DiffValue::Empty),
-        Sj::Object(m) => Ok(DiffValue::Patch(Arc::new(parse_patch_object(m)?))),
+        Sj::Object(m) => {
+            if let Some(replace_val) = m.get(REPLACE) {
+                Ok(DiffValue::Replace(parse_diff_value(replace_val.clone())?))
+            } else {
+                Ok(DiffValue::Patch(Arc::new(parse_patch_object(m)?)))
+            }
+        }
         other => Ok(DiffValue::Replace(parse_diff_value(other)?)),
     }
 }
