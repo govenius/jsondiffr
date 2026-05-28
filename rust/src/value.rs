@@ -46,15 +46,15 @@ impl JsonValue {
         }
     }
 
-    pub fn to_serde(&self) -> serde_json::Value {
+    pub fn to_serde(&self, escape_dollars: bool) -> serde_json::Value {
         match self {
             JsonValue::Null => serde_json::Value::Null,
             JsonValue::Bool(b) => serde_json::Value::Bool(*b),
             JsonValue::Number(n) => serde_json::Value::Number(n.0.clone()),
             JsonValue::String(s) => {
                 // To round-trip the unescaping done in parse_diff_value,
-                // we must re-escape $ prefixes here.
-                let escaped = if s.starts_with('$') {
+                // we must re-escape $ prefixes here if requested.
+                let escaped = if escape_dollars && s.starts_with('$') {
                     format!("${}", s)
                 } else {
                     s.to_string()
@@ -63,13 +63,13 @@ impl JsonValue {
             }
             JsonValue::Array(a) => {
                 serde_json::Value::Array(
-                    a.iter().map(|v| v.to_serde()).collect(),
+                    a.iter().map(|v| v.to_serde(escape_dollars)).collect(),
                 )
             }
             JsonValue::Object(m) => {
                 let mut map = serde_json::Map::new();
                 for (k, v) in m.iter() {
-                    map.insert(k.to_string(), v.to_serde());
+                    map.insert(k.to_string(), v.to_serde(escape_dollars));
                 }
                 serde_json::Value::Object(map)
             }

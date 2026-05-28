@@ -35,20 +35,20 @@ impl DiffValue {
             DiffValue::Empty => Sj::Object(serde_json::Map::new()),
             DiffValue::Replace(v) => {
                 let mut map = serde_json::Map::new();
-                map.insert(REPLACE.to_string(), v.to_serde());
+                map.insert(REPLACE.to_string(), v.to_serde(true));
                 Sj::Object(map)
             }
             DiffValue::Patch(p) => {
                 let mut map = serde_json::Map::new();
 
                 if let Some(replace_val) = &p.replace {
-                    map.insert(REPLACE.to_string(), replace_val.to_serde());
+                    map.insert(REPLACE.to_string(), replace_val.to_serde(true));
                 }
 
                 if let Some(delete_vals) = &p.delete {
                     let mut del_arr = Vec::new();
                     for v in delete_vals {
-                        del_arr.push(v.to_serde());
+                        del_arr.push(v.to_serde(true));
                     }
                     map.insert(DELETE.to_string(), Sj::Array(del_arr));
                 }
@@ -58,7 +58,7 @@ impl DiffValue {
                     for (pos, val) in insert_vals {
                         let mut pair = Vec::new();
                         pair.push(Sj::from(*pos));
-                        pair.push(val.to_serde());
+                        pair.push(val.to_serde(true));
                         ins_arr.push(Sj::Array(pair));
                     }
                     map.insert(INSERT.to_string(), Sj::Array(ins_arr));
@@ -67,7 +67,7 @@ impl DiffValue {
                 if let Some(add_vals) = &p.add {
                     let mut add_arr = Vec::new();
                     for v in add_vals {
-                        add_arr.push(v.to_serde());
+                        add_arr.push(v.to_serde(true));
                     }
                     map.insert(ADD.to_string(), Sj::Array(add_arr));
                 }
@@ -75,7 +75,7 @@ impl DiffValue {
                 if let Some(discard_vals) = &p.discard {
                     let mut disc_arr = Vec::new();
                     for v in discard_vals {
-                        disc_arr.push(v.to_serde());
+                        disc_arr.push(v.to_serde(true));
                     }
                     map.insert(DISCARD.to_string(), Sj::Array(disc_arr));
                 }
@@ -83,7 +83,7 @@ impl DiffValue {
                 for (key, entry) in p.entries.iter() {
                     // Marshal the key: escape $ if it's a data key.
                     // According to FORMAT.md §1: "A string "$x" already starting with $ -> "$$x""
-                    map.insert(escape_object_key(key), entry.to_serde());
+                    map.insert(escape_object_key(key), entry.to_serde(true));
                 }
 
                 Sj::Object(map)
