@@ -83,7 +83,7 @@ impl DiffValue {
                 for (key, entry) in p.entries.iter() {
                     // Marshal the key: escape $ if it's a data key.
                     // According to FORMAT.md §1: "A string "$x" already starting with $ -> "$$x""
-                    map.insert(escape_object_key(key), entry.to_serde(true));
+                    map.insert(escape_object_key(key), entry.to_serde());
                 }
 
                 Sj::Object(map)
@@ -150,7 +150,7 @@ fn unescape_object_key(k: &str) -> Arc<str> {
 }
 
 /// Inverse of `unescape_object_key`.
-fn escape_object_key(k: &str) -> String {
+pub(crate) fn escape_object_key(k: &str) -> String {
     if k.starts_with('$') {
         format!("${}", k)
     } else {
@@ -191,7 +191,7 @@ fn unescape_data_string(s: &str) -> Arc<str> {
 }
 
 /// Inverse of `unescape_data_string`.
-fn escape_data_string(s: &str) -> String {
+pub(crate) fn escape_data_string(s: &str) -> String {
     if s.starts_with('$') {
         format!("${}", s)
     } else {

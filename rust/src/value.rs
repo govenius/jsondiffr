@@ -8,6 +8,8 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
+use crate::diff::{escape_data_string, escape_object_key};
+
 /// Newtype around `serde_json::Number` so we can derive `Eq` cleanly and have
 /// a stable comparison point for the rest of the crate.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -46,30 +48,27 @@ impl JsonValue {
         }
     }
 
-    pub fn to_serde(&self, escape_dollars: bool) -> serde_json::Value {
+    pub fn to_serde(&self, escape_as_diff: bool) -> serde_json::Value {
         match self {
             JsonValue::Null => serde_json::Value::Null,
             JsonValue::Bool(b) => serde_json::Value::Bool(*b),
             JsonValue::Number(n) => serde_json::Value::Number(n.0.clone()),
             JsonValue::String(s) => {
                 // To round-trip the unescaping done in parse_diff_value,
-                // we must re-escape $ prefixes here if requested.
-                let escaped = if escape_dollars && s.starts_with('$') {
-                    format!("${}", s)
-                } else {
-                    s.to_string()
-                };
+                // we must escape $ prefixes here, in case of diff serialization (but not target JSONs).
+                let escaped = if escape_as_diff { escape_data_string(s) } else { s.to_string() };
                 serde_json::Value::String(escaped)
             }
             JsonValue::Array(a) => {
                 serde_json::Value::Array(
-                    a.iter().map(|v| v.to_serde(escape_dollars)).collect(),
+                    a.iter().map(|v| v.to_serde(escape_as_diff)).collect(),
                 )
             }
             JsonValue::Object(m) => {
                 let mut map = serde_json::Map::new();
                 for (k, v) in m.iter() {
-                    map.insert(k.to_string(), v.to_serde(escape_dollars));
+                    let escaped_key = if escape_as_diff { escape_object_key(k) } else { k.to_string() };
+                    map.insert(escaped_key, v.to_serde(escape_as_diff));
                 }
                 serde_json::Value::Object(map)
             }
