@@ -51,7 +51,16 @@ impl JsonValue {
             JsonValue::Null => serde_json::Value::Null,
             JsonValue::Bool(b) => serde_json::Value::Bool(*b),
             JsonValue::Number(n) => serde_json::Value::Number(n.0.clone()),
-            JsonValue::String(s) => serde_json::Value::String(s.to_string()),
+            JsonValue::String(s) => {
+                // To round-trip the unescaping done in parse_diff_value,
+                // we must re-escape $ prefixes here.
+                let escaped = if s.starts_with('$') {
+                    format!("${}", s)
+                } else {
+                    s.to_string()
+                };
+                serde_json::Value::String(escaped)
+            }
             JsonValue::Array(a) => {
                 serde_json::Value::Array(
                     a.iter().map(|v| v.to_serde()).collect(),

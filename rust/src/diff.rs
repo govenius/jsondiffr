@@ -83,12 +83,7 @@ impl DiffValue {
                 for (key, entry) in p.entries.iter() {
                     // Marshal the key: escape $ if it's a data key.
                     // According to FORMAT.md §1: "A string "$x" already starting with $ -> "$$x""
-                    let marshalled_key = if key.starts_with('$') {
-                        format!("${}", key)
-                    } else {
-                        key.to_string()
-                    };
-                    map.insert(marshalled_key, entry.to_serde());
+                    map.insert(escape_object_key(key), entry.to_serde());
                 }
 
                 Sj::Object(map)
@@ -154,6 +149,15 @@ fn unescape_object_key(k: &str) -> Arc<str> {
     }
 }
 
+/// Inverse of `unescape_object_key`.
+fn escape_object_key(k: &str) -> String {
+    if k.starts_with('$') {
+        format!("${}", k)
+    } else {
+        k.to_string()
+    }
+}
+
 // ── Value parsing inside a diff (recursive string/object key unescape) ─────
 
 /// Parse a JSON value that appears as *data* inside a diff (the `$replace`
@@ -183,6 +187,15 @@ fn unescape_data_string(s: &str) -> Arc<str> {
         Arc::from(rest)
     } else {
         Arc::from(s)
+    }
+}
+
+/// Inverse of `unescape_data_string`.
+fn escape_data_string(s: &str) -> String {
+    if s.starts_with('$') {
+        format!("${}", s)
+    } else {
+        s.to_string()
     }
 }
 
