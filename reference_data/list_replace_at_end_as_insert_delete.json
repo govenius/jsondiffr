@@ -1,0 +1,24 @@
+{
+  "description": "Single replacement at end of list, as insert+delete.",
+  "source": [
+    "a",
+    "b",
+    "c"
+  ],
+  "target": [
+    "a",
+    "b",
+    "d"
+  ],
+  "diff": {
+    "$insert": [
+      [
+        2,
+        "d"
+      ]
+    ],
+    "$delete": [
+      2
+    ]
+  }
+}

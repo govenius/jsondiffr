@@ -10,6 +10,8 @@
     "list_insert_delete_change",
     "list_pure_insert",
     "list_pure_delete",
+    "list_replace_at_end",
+    "list_replace_at_end_as_insert_delete",
     "list_low_similarity_bare_target",
     "list_of_dicts_partial_change",
     "empty_diff_equal_inputs",

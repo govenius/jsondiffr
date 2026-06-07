@@ -1,0 +1,16 @@
+{
+  "description": "Single replacement at end of list.",
+  "source": [
+    "a",
+    "b",
+    "c"
+  ],
+  "target": [
+    "a",
+    "b",
+    "d"
+  ],
+  "diff": {
+    "2": "d"
+  }
+}

@@ -30,113 +30,149 @@ CASES = [
         "Basic dict diff exercising all of add, change, and delete.",
         {"a": 1, "b": 2},
         {"b": 3, "c": 4},
+        None,
     ),
     (
         "dict_nested_subpatch",
         "Nested dict edits propagate as sub-diffs at integer list positions.",
         {"a": [0, {"b": 4}, 1]},
         {"a": [0, {"b": 5}, 1]},
+        None,
     ),
     (
         "dict_full_replace_low_similarity",
         "Disjoint keys force a $replace fallback at the top level.",
         {"a": 1, "b": 2},
         {"x": 3, "y": 4},
+        None,
     ),
     (
         "dict_empty_to_populated",
         "Adding all keys to an empty dict produces $replace (similarity = 0).",
         {},
         {"a": 1, "b": 2},
+        None,
     ),
     (
         "dict_populated_to_empty",
         "Removing every key produces $replace with an empty target dict.",
         {"a": 1},
         {},
+        None,
     ),
     (
         "list_insert_delete_change",
         "List edit combining insertion, deletion, and an integer-keyed sub-patch.",
         ["x", "a", {"v": 11}, "c", "x"],
         ["a", {"v": 20}, "b", "c"],
+        None,
     ),
     (
         "list_pure_insert",
         "Single insertion into a list.",
         ["a", "c"],
         ["a", "b", "c"],
+        None,
     ),
     (
         "list_pure_delete",
         "Single deletion from a list.",
         ["a", "b", "c"],
         ["a", "c"],
+        None,
+    ),
+    (
+        "list_replace_at_end",
+        "Single replacement at end of list.",
+        ["a", "b", "c"],
+        ["a", "b", "d"],
+        { "2": "d" },
+    ),
+    (
+        "list_replace_at_end_as_insert_delete",
+        "Single replacement at end of list, as insert+delete.",
+        ["a", "b", "c"],
+        ["a", "b", "d"],
+        {
+            "$insert": [ [2,"d"] ],
+            "$delete": [ 2 ]
+        },
     ),
     (
         "list_low_similarity_bare_target",
         "Disjoint list elements produce a bare-list replacement diff.",
         [1, 2, 3],
         ["x", "y"],
+        None,
     ),
     (
         "list_of_dicts_partial_change",
         "One element changes; others remain unchanged and are omitted from the diff.",
         [{"id": 1, "v": 10}, {"id": 2, "v": 20}],
         [{"id": 1, "v": 11}, {"id": 2, "v": 20}],
+        None,
     ),
     (
         "empty_diff_equal_inputs",
         "Equal inputs yield the empty-dict no-change diff.",
         {"a": [1, 2, 3]},
         {"a": [1, 2, 3]},
+        None,
     ),
     (
         "replace_with_scalar_target",
         "Scalar target produces a bare value diff (no $replace wrap needed).",
         {"a": 1, "b": 2},
         42,
+        None,
     ),
     (
         "replace_with_dict_target_from_list",
         "Type mismatch with a dict target is wrapped in $replace.",
         [1, 2, 3],
         {"k": "v"},
+        None,
     ),
     (
         "replace_with_list_target_from_dict",
         "Type mismatch with a non-dict target stays bare.",
         {"a": 1},
         [1, 2],
+        None,
     ),
     (
         "escape_dollar_prefix_key",
         "Data key starting with $ is escaped to $$ on the wire.",
         {"$key": 1},
         {"$key": 2},
+        None,
     ),
     (
         "escape_dollar_prefix_value",
         "Data value with $ is escaped to $$.",
         {"key": "$value 1"},
         {"key": "value $2"},
+        None,
     ),
     (
         "escape_double_dollar_prefix_key",
         "Data key starting with $$ is escaped to $$$.",
         {"$$key": 1},
         {"$$key": 2},
+        None,
     ),
     (
         "null_to_value",
         "Replacing null with a scalar value.",
         None,
         42,
+        None,
     ),
     (
         "value_to_null",
         "Replacing a scalar value with null.",
         42,
+        None,
         None,
     ),
     (
@@ -144,6 +180,7 @@ CASES = [
         "Multi-level nesting with a single change at depth 3.",
         {"a": {"b": {"c": [1, 2, 3]}}},
         {"a": {"b": {"c": [1, 9, 3]}}},
+        None,
     ),
 ]
 
@@ -159,8 +196,8 @@ def main():
 
     differ = jsondiff.JsonDiffer()
 
-    for case_id, desc, source, target in CASES:
-        marshalled = jsondiff.diff(source, target, marshal=True)
+    for case_id, desc, source, target, d_marshalled in CASES:
+        if d_marshalled is None: d_marshalled = jsondiff.diff(source, target, marshal=True)
 
         # Round-trip the in-memory form to catch regressions in this script.
         d_inmem = jsondiff.diff(source, target)
@@ -170,7 +207,7 @@ def main():
         )
 
         # Round-trip the wire form to ensure JSON serialization is lossless.
-        wire = json.loads(json.dumps(marshalled))
+        wire = json.loads(json.dumps(d_marshalled))
         patched_wire = differ.patch(source, differ.unmarshal(wire))
         assert patched_wire == target, (
             f"{case_id}: wire round-trip failed: {patched_wire!r} != {target!r}"
@@ -183,7 +220,7 @@ def main():
                     "description": desc,
                     "source": source,
                     "target": target,
-                    "diff": marshalled,
+                    "diff": d_marshalled,
                 },
                 f,
                 indent=2,
@@ -200,7 +237,7 @@ def main():
             "Each <case_id>.json contains source/target/diff; conforming "
             "patchers must satisfy patch(source, diff) == target. See FORMAT.md."
         ),
-        "cases": [case_id for case_id, _, _, _ in CASES],
+        "cases": [case_id for case_id, _, _, _, _ in CASES],
     }
     with open(os.path.join(out_dir, "_manifest.json"), "w") as f:
         json.dump(manifest, f, indent=2)
