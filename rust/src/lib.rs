@@ -35,13 +35,13 @@
 mod diff;
 mod differ;
 mod error;
-mod patch;
+mod patcher;
 mod value;
 
 pub use diff::{parse_diff, DiffValue, Patch};
 pub use differ::diff;
 pub use error::{ParseError, PatchError};
-pub use patch::patch;
+pub use patcher::patch;
 pub use value::{JsonNumber, JsonValue};
 
 /// Convert a `serde_json::Value` into the immutable `JsonValue` AST without
