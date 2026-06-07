@@ -1,0 +1,12 @@
+{
+  "description": "Data value with $ is escaped to $$.",
+  "source": {
+    "key": "$value 1"
+  },
+  "target": {
+    "key": "value $2"
+  },
+  "diff": {
+    "key": "value $2"
+  }
+}

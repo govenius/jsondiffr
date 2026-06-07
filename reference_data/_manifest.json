@@ -16,8 +16,9 @@
     "replace_with_scalar_target",
     "replace_with_dict_target_from_list",
     "replace_with_list_target_from_dict",
-    "escape_dollar_prefix_data",
-    "escape_double_dollar_prefix_data",
+    "escape_dollar_prefix_key",
+    "escape_dollar_prefix_value",
+    "escape_double_dollar_prefix_key",
     "null_to_value",
     "value_to_null",
     "deeply_nested_edit"

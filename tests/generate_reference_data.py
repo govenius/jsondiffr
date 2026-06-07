@@ -110,13 +110,19 @@ CASES = [
         [1, 2],
     ),
     (
-        "escape_dollar_prefix_data",
+        "escape_dollar_prefix_key",
         "Data key starting with $ is escaped to $$ on the wire.",
         {"$key": 1},
         {"$key": 2},
     ),
     (
-        "escape_double_dollar_prefix_data",
+        "escape_dollar_prefix_value",
+        "Data value with $ is escaped to $$.",
+        {"key": "$value 1"},
+        {"key": "value $2"},
+    ),
+    (
+        "escape_double_dollar_prefix_key",
         "Data key starting with $$ is escaped to $$$.",
         {"$$key": 1},
         {"$$key": 2},
