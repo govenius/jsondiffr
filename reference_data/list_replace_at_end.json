@@ -1,5 +1,5 @@
 {
-  "description": "Single replacement at end of list.",
+  "description": "Replace elements at end of list.",
   "source": [
     "a",
     "b",
@@ -7,10 +7,11 @@
   ],
   "target": [
     "a",
-    "b",
+    "e",
     "d"
   ],
   "diff": {
+    "1": "e",
     "2": "d"
   }
 }

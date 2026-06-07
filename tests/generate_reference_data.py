@@ -83,19 +83,19 @@ CASES = [
     ),
     (
         "list_replace_at_end",
-        "Single replacement at end of list.",
+        "Replace elements at end of list.",
         ["a", "b", "c"],
-        ["a", "b", "d"],
-        { "2": "d" },
+        ["a", "e", "d"],
+        { "1": "e", "2": "d" },
     ),
     (
         "list_replace_at_end_as_insert_delete",
-        "Single replacement at end of list, as insert+delete.",
+        "Replace elements at end of list, as insert+delete.",
         ["a", "b", "c"],
-        ["a", "b", "d"],
+        ["a", "e", "d"],
         {
-            "$insert": [ [2,"d"] ],
-            "$delete": [ 2 ]
+            "$insert": [ [1,"e"], [2,"d"] ],
+            "$delete": [ 2,1 ]
         },
     ),
     (
