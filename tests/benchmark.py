@@ -71,8 +71,7 @@ if __name__ == "__main__":
     # 4. Large List (Many insertions/deletions)
     n_elements = 1000; n_mods = n_elements // 10
     a_list_mod = generate_large_list(n_elements)
-    d_list_mod = {"$delete": list(range(n_mods)), "$insert": [(n_elements, i) for i in range(n_mods)]}
-    #b_list_mod = patch(copy.deepcopy(a_list_mod), unmarshal(copy.deepcopy(d_list_mod)))
+    d_list_mod = {"$delete": list(reversed(range(n_mods))), "$insert": [(n_elements//2, i) for i in range(n_mods)]}
     for r in [True, False]: run_benchmark(f"Large List ({n_elements} elements, {n_mods} del + {n_mods} ins)", a_list_mod, d_list_mod, jsondiffr=r)
 
     # 5. Large List (Element updates)
