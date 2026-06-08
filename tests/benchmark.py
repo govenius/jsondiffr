@@ -18,11 +18,11 @@ def run_benchmark(name, a, d, iterations=20, do_patch=True, do_diff=True, jsondi
     print(f"Benchmarking: {name}")
 
     if do_patch:
-        setup_code = f"import json; from jsondiff import JsonDiffer, patch; unmarshal = JsonDiffer().unmarshal; patch; a={a}"
-        stmt = f"patch(a, unmarshal({d}))" # Typical use case: a = Python dict, d = (marshalled) str, output = Python dict
+        setup_code = f"import json; import jsondiff; a={a}; d=json.dumps({d})"
+        stmt = f"jsondiff.patch(a, json.loads(d), marshal=True)" # Typical use case: a = Python dict, d = (marshalled) str, output = Python dict
         if jsondiffr:
-            setup_code = f"import json; from jsondiffr import patch; a=json.dumps({a}); d=json.dumps({d})"
-            stmt = f"patch(a, d)" # Typical use case: a = Python dict, d = (marshalled) str, output = JsonValue (assuming only subdicts queried/converted to Python later)
+            setup_code = f"import json; from jsondiffr import patch; a=patch(json.dumps({a}), '" "{}" f"'); d=json.dumps({d})"
+            stmt = f"patch(a, d)" # Typical use case: a = JsonValue (previously patched JSON), d = (marshalled) str, output = JsonValue (assuming only small subdicts queried/converted to Python later)
         try:
             timer = timeit.Timer(stmt, setup=setup_code)
             result = timer.timeit(number=iterations)
@@ -33,7 +33,7 @@ def run_benchmark(name, a, d, iterations=20, do_patch=True, do_diff=True, jsondi
     if do_diff:
         b = patch(copy.deepcopy(a), unmarshal(copy.deepcopy(d)))
         setup_code = f"import json; from jsondiff import diff; a={a}; b={b}"
-        stmt = "json.dumps(diff(a, b))" # Typical use case: a,b = Python dict, output = (marshalled) str
+        stmt = "json.dumps(diff(a, b, marshal=True))" # Typical use case: a,b = Python dict, output = (marshalled) str
         if jsondiffr:
             setup_code = f"import json; from jsondiffr import diff; a=json.dumps({a}); b=json.dumps({b})"
             stmt = "diff(a, b)" # Typical use case: a,b = Python dict, output = (marshalled) str
