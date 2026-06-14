@@ -147,6 +147,7 @@ fn parse_patch_object(m: serde_json::Map<String, Sj>) -> Result<Patch, ParseErro
 
 /// FORMAT.md §1: "$$x" → "$x"; unknown "$<label>" → strip a single `$`;
 /// otherwise unchanged.
+#[inline(always)]
 fn unescape_object_key(k: &str) -> Arc<str> {
     if let Some(rest) = k.strip_prefix('$') {
         Arc::from(rest)
@@ -156,6 +157,7 @@ fn unescape_object_key(k: &str) -> Arc<str> {
 }
 
 /// Inverse of `unescape_object_key`.
+#[inline(always)]
 pub(crate) fn escape_object_key(k: &str) -> String {
     if k.starts_with('$') {
         format!("${}", k)
@@ -188,6 +190,7 @@ fn parse_diff_value(v: Sj) -> Result<JsonValue, ParseError> {
     })
 }
 
+#[inline(always)]
 fn unescape_data_string(s: &str) -> Arc<str> {
     if let Some(rest) = s.strip_prefix('$') {
         Arc::from(rest)
@@ -197,6 +200,7 @@ fn unescape_data_string(s: &str) -> Arc<str> {
 }
 
 /// Inverse of `unescape_data_string`.
+#[inline(always)]
 pub(crate) fn escape_data_string(s: &str) -> String {
     if s.starts_with('$') {
         format!("${}", s)

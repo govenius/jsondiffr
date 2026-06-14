@@ -48,6 +48,7 @@ impl JsonValue {
         }
     }
 
+    #[inline(always)]
     pub fn to_serde(&self) -> serde_json::Value {
         self.to_diff_serde(false)
     }
