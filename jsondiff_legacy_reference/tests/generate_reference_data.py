@@ -10,9 +10,9 @@ any language should satisfy:
 Sets are intentionally excluded because JSON has no native set type; consumers
 that need set semantics should construct hand-written test cases.
 
-Run from the repo root with the jsondiff1 conda env active:
+Run from the repo root:
 
-    python tests/generate_reference_data.py
+    python jsondiff_legacy_reference/tests/generate_reference_data.py
 
 Output: reference_data/<case_id>.json plus reference_data/_manifest.json.
 """
@@ -185,7 +185,7 @@ CASES = [
 ]
 
 
-OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "reference_data")
+OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "reference_data")
 
 
 def main():
