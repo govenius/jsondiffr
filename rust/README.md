@@ -2,6 +2,45 @@
 
 Rust implementation compliant with the JSON diff format specified in `FORMAT.md`. Provides a **patcher** that consumes the marshalled diff format defined in `FORMAT.md` and a **differ** that computes the difference between two JSON structures.
 
+## Usage
+
+### Rust
+
+```rust
+use jsondiffr::{diff, patch, parse_source, parse_diff};
+use serde_json::json;
+
+fn main() {
+    let a = parse_source(json!({"name": "Alice", "skills": ["Python"]}));
+    let b = parse_source(json!({"name": "Alice", "skills": ["Python", "Rust"]}));
+
+    // Compute a diff
+    let d = diff(&a, &b);
+
+    // Apply the diff to a
+    let patched = patch(&a, &d).unwrap();
+
+    assert_eq!(patched, b);
+}
+```
+
+### Python
+
+```python
+import jsondiffr
+
+a = {"name": "Alice", "skills": ["Python"]}
+b = {"name": "Alice", "skills": ["Python", "Rust"]}
+
+# Compute a diff
+d = jsondiffr.diff(a, b)
+
+# Apply the diff to a
+patched = jsondiffr.patch(a, d)
+
+assert patched == b
+```
+
 ## Source files
 
 - [src/lib.rs](src/lib.rs) — public API for both `patch()` and `diff()`.
