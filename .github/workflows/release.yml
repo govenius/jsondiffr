@@ -16,7 +16,6 @@ jobs:
         os:
           - ubuntu-24.04
           - windows-latest
-          - macos-14
 
     steps:
       - name: Checkout
