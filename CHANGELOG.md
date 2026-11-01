@@ -6,6 +6,8 @@ Breaking changes:
 
 * Remove object-oriented syntax. The only way to call diff/patch is
   `import jsondiffr; jsondiffr.diff(source, target)` and jsondiffr.patch(source, diff)`
+* Sources and targets are provided as `str` (or immutable `JsonValue`s).
+  Conversion from Python objects to `str` is left to the user.
 * drop `explicit`, `symmetric`, and `rightonly` diff syntaxes; only
   the `compact` syntax remains.
 * `syntax=` keyword argument removed; calls like

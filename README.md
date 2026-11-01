@@ -12,6 +12,7 @@ The diff format matches that of
 [jsondiff](https://github.com/xlwings/jsondiff) (v2.2.1), except that
 it is somewhat **reduced** in terms of functionality:
 - Only pure JSON is supported. Python sets are not supported.
+- Sources and targets are provided as `str` (or immutable `JsonValue`s). Conversion from Python objects to `str` is left to the user.
 - Only the "compact" format is supported.
 - The escape character for sentinels is hardcoded as `$`.
 
@@ -53,18 +54,28 @@ fn main() {
 ### Python
 
 ```python
+import json
 import jsondiffr
 
-a = {"name": "Alice", "skills": ["Python"]}
-b = {"name": "Alice", "skills": ["Python", "Rust"]}
+# Generate dummy data *as str*
+a = json.dumps({"name": "Alice", "skills": ["Python"]})
+b = json.dumps({"name": "Alice", "skills": ["Python", "Rust"]})
 
 # Compute a diff
 d = jsondiffr.diff(a, b)
 
-# Apply the diff to a
+# Apply the diff to a.
+# Returns a wrapper around an immutable JsonValue Rust type.
 patched = jsondiffr.patch(a, d)
 
-assert patched == b
+# You can convert the result to a regular Python object with .to_python()
+patched_dict = patched.to_python()
+assert json.dumps(patched_dict) == b
+
+# You can also convert only a limited subtree into a Python object,
+# by specifying the path to it as a tuple:
+print(f"The patched skills are: {patched.to_python(("skills",))}")
+
 ```
 
 ## Reference Python reference implementation
