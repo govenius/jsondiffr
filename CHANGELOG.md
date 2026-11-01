@@ -5,7 +5,7 @@
 Breaking changes:
 
 * Remove object-oriented syntax. The only way to call diff/patch is
-  `import jsondiffr; jsondiffr.diff(source, target)` and jsondiffr.patch(source, diff).to_python()`
+  `import jsondiffr; jsondiffr.diff(source, target)` and `jsondiffr.patch(source, diff).to_python()`
 * Sources and targets are provided as `str` (or immutable `JsonValue`s).
   Conversion from Python objects to `str` is left to the user.
 * drop `explicit`, `symmetric`, and `rightonly` diff syntaxes; only
