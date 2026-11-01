@@ -4,9 +4,13 @@ Robust and stable diffs of pure JSON files.
 
 ## Goals
 
-The diff format produced and consumed by `jsondiffr` is aimed to be
-**stable** and **well-specified**, so that the diffs are suitable for
-long-term storage. The format is also **compact**.
+The diff format and jsondiffr implementation aim at:
+
+* A **stable** and **well-specified** on-disk diff format,
+  so that the diffs are suitable for long-term storage.
+* A **compact** diff format.
+* Patch returning **immutable** results, so that nested patches are
+  cheap (`patch(patch(source, diff0), diff1)`).
 
 The diff format matches that of
 [jsondiff](https://github.com/xlwings/jsondiff) (v2.2.1), except that
