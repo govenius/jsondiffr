@@ -36,15 +36,22 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install maturin
-        run: pip install maturin
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
 
-      - name: Install pytest
-        run: pip install pytest
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install maturin pytest
 
-      - name: Build and install extension
+      - name: Build wheel
         working-directory: bindings/python
-        run: maturin develop --release
+        run: maturin build --release
+
+      - name: Install wheel
+        working-directory: bindings/python
+        run: |
+          pip install --force-reinstall target/wheels/*.whl
 
       - name: Run Python tests
         working-directory: bindings/python
