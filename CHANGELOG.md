@@ -1,21 +1,24 @@
 # Changelog
 
-## 3.0.0 (unreleased)
+## 3.0.0 (First release after porting to Rust)
 
-Breaking: drop `explicit`, `symmetric`, and `rightonly` diff syntaxes; only
-the `compact` syntax remains.
+Breaking changes:
 
-* `JsonDiffer` no longer accepts a `syntax=` keyword argument; calls like
+* Remove object-oriented syntax. The only way to call diff/patch is
+  `import jsondiffr; jsondiffr.diff(source, target)` and jsondiffr.patch(source, diff)`
+* drop `explicit`, `symmetric`, and `rightonly` diff syntaxes; only
+  the `compact` syntax remains.
+* `syntax=` keyword argument removed; calls like
   `diff(a, b, syntax='symmetric')` will fail.
-* `JsonDiffer.unpatch` and the `unpatch` capability are removed (only the
+* `unpatch(...)` removed (only the
   symmetric syntax implemented reversal).
 * Module attributes `JsonDiffSyntax`, `CompactJsonDiffSyntax`,
   `ExplicitJsonDiffSyntax`, `SymmetricJsonDiffSyntax`,
-  `RightOnlyJsonDiffSyntax`, and `builtin_syntaxes` have been removed; the
-  compact emit/patch logic is now inlined in `JsonDiffer`.
-* CLI: the `-s/--syntax` flag is removed.
-* `JsonDiffer` no longer accepts an `escape_str=` keyword argument; the
+  `RightOnlyJsonDiffSyntax`, and `builtin_syntaxes` removed.
+* `escape_str=` keyword argument removed; the
   marshal/unmarshal escape prefix is hardcoded to `$`.
+* Only JSON compliant with Rust's serde_json is supported. Python sets are not supported.
+* CLI is removed.
 
 ## 2.2.1 (Aug, 28th 2024)
 

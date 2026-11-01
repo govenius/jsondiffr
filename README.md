@@ -23,6 +23,45 @@ The core implementation is under `rust/`.
 
 A separate crate under `bindings/python` provides bindings to Python.
 
+## Usage
+
+### Rust
+
+```rust
+use jsondiffr::{diff, patch, parse_source, parse_diff};
+use serde_json::json;
+
+fn main() {
+    let a = parse_source(json!({"name": "Alice", "skills": ["Python"]}));
+    let b = parse_source(json!({"name": "Alice", "skills": ["Python", "Rust"]}));
+
+    // Compute a diff
+    let d = diff(&a, &b);
+
+    // Apply the diff to a
+    let patched = patch(&a, &d).unwrap();
+
+    assert_eq!(patched, b);
+}
+```
+
+### Python
+
+```python
+import jsondiffr
+
+a = {"name": "Alice", "skills": ["Python"]}
+b = {"name": "Alice", "skills": ["Python", "Rust"]}
+
+# Compute a diff
+d = jsondiffr.diff(a, b)
+
+# Apply the diff to a
+patched = jsondiffr.patch(a, d)
+
+assert patched == b
+```
+
 ## Reference Python reference implementation
 
 We aim to have `patch(source, d)` correctly apply diffs generated with [jsondiff](https://github.com/xlwings/jsondiff) v2.2.1.
