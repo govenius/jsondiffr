@@ -4,11 +4,30 @@ build-backend = "maturin"
 
 [project]
 name = "jsondiffr"
-version = "0.1.0"
-description = "Python bindings for the jsondiffr patcher and differ."
+dynamic = ["version"]
+description = "Robust and stable diffs of pure JSON files (Python bindings)"
+readme = "README.md"
 requires-python = ">=3.9"
-classifiers = ["Programming Language :: Rust"]
+license = "MIT"
+
+authors = [
+    { name = "Joonas Govenius" }
+]
+
+keywords = ["json", "diff", "patch", "comparison"]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Rust",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/govenius/jsondiffr"
+Repository = "https://github.com/govenius/jsondiffr"
 
 [tool.maturin]
 module-name = "jsondiffr"
 features = ["pyo3/extension-module"]
+manifest-path = "Cargo.toml"

@@ -62,3 +62,8 @@ target/
 
 # Ignore auto-generated _version
 /jsondiff/_version.py
+
+# Temp files
+*~
+#*
+*#
