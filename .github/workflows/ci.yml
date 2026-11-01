@@ -1,0 +1,51 @@
+# .github/workflows/ci.yml
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  rust:
+    name: Rust tests
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Rust tests
+        run: cargo test --manifest-path rust/Cargo.toml
+
+  python:
+    name: Python bindings tests
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Build and install extension
+        working-directory: bindings/python
+        run: maturin develop --release
+
+      - name: Run Python tests
+        working-directory: bindings/python
+        run: python -m pytest tests/test_jsondiffr.py
